@@ -1,0 +1,41 @@
+set macros
+#MACROS
+TMARGIN = "set tmargin at screen 0.97; set bmargin at screen 0.16"
+LMARGIN  = "set lmargin at screen 0.15;  set rmargin at screen 0.56"
+RMARGIN  = "set lmargin at screen 0.56;  set rmargin at screen 0.97"
+NOXTICS  = "set xtics format '';unset xlabel"
+NOYTICS  = "set ytics format '';unset ylabel"
+XTICS    = "set xtics format '%.0f'"
+YTICS    = "set xtics format '%.2f'"
+#--colorbrewer palettes
+load '~/.gnuplot/gnuplot-colorbrewer/qualitative/Set1.plt'
+set terminal pdfcairo size 6,3 font "FreeSerif,12"  lw 1.5
+set output 'panel_2.pdf'
+load '~/.gnuplot/border_bottom_left.cfg'
+
+#  The panels in output are arranged as in the left panel below.
+#  The order of the plots in this template is not a-b-c-d, but a-b-d-c.
+#   ----------------
+#   |   a   |  b   |
+#	  ----------------
+#	  |   c   |  d   |
+#	  ----------------
+#
+files="phi_13.dat  phi_15.dat  phi_17.dat  phi_19.dat psi_14.dat  psi_16.dat  psi_18.dat  psi_20.dat"
+set border 3 lc rgb 'grey20' lw 1
+set multiplot
+#--top-left
+@TMARGIN
+@LMARGIN
+#set label 1 "a)" at  200,0.065 font "DroidSans,16"
+set xr[-pi:pi]
+set yr[0:]
+set xl 'dihedrals'
+plot for [i=1:words(files)] word(files,i) w steps ls i not
+#--top-right
+@RMARGIN
+@NOYTICS
+#set label 1 "b)" at  200,0.065 font "DroidSans,16"
+
+
+unset multiplot

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+#./test_phi_psi_excludedVolume.x aapot > output 2>&1
+
+len=180
+binWidth=$(bc <<< "scale=8;(2.0 * ${len} ) / 180.0")
+filePath=$(ls *.dat | head -n 1)
+
+gnuplot << EOF
+
+set xlabel '{/Symbol f}'
+set ylabel '{/Symbol y}'
+set view map
+
+set term pdf enhanced
+set output '${filePath%%dat}pdf'
+splot [-180.0:179.0][-180.0:179.0][:] '${filePath}' u (\$1*${binWidth}-${len}+0.5):(\$2*${binWidth}-${len}+0.5):3 matrix w image t ''
+pause mouse keypress
+
+EOF

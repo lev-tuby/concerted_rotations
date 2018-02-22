@@ -1,0 +1,153 @@
+#!/bin/bash
+
+rmachandran(){
+for d in $(ls -d ./run*); do
+	cd $d
+	nbinds=$(wc -l $(ls *.dat | tail -n 1))
+
+	for f in $(ls *.dat); do
+		len=80
+		binWidth=$(bc <<< "scale=8;(2.0 * ${len} ) / 300.0")
+gnuplot << EOF
+
+set xlabel 'phi'
+set ylabel 'psi'
+set view map
+
+set term pdf enhanced
+set output '${f%%dat}pdf'
+splot '${f}' u (\$1*${binWidth}-${len}):(\$2*${binWidth}-${len}):3 matrix w image
+pause mouse keypress
+
+EOF
+    x(){
+    awk 'BEGIN{
+        histoMax=0;
+    }
+    {
+    for(i=1;i<=NF;i++){
+	# to make it just number not formated number string
+	value=$i*1;
+        if (value > histoMax){histoMax=value}
+        dis[value]++;
+    }
+    }
+    END{
+        for (i=0;i<=histoMax;i++){
+            ## check if given value was intilaized
+            if(dis[i]==""){
+                printf("%05i\t%09i\n", i, 0);
+            }else{
+                printf("%05i\t%09i\n", i, dis[i]);
+            }
+        }
+    }' < $1
+    }
+
+        k=${f##data_}
+        d=${k%%.dat}
+        sigma=${d%%_time*}
+        iter=${d##*_time_}
+        echo -e "\n\niter=${iter}" >> sigma_${sigma}.dat
+        x $f >> sigma_${sigma}.dat
+    done
+
+    for f in $(ls sigma_*.dat); do
+gnuplot << EOF
+
+set xlabel 'Bin frequncy'
+set ylabel 'How many bins are there'
+
+set term pdf enhanced
+set output '${f%%dat}pdf'
+
+plot for [IDX=100:1000:100] '${f}' i IDX u 1:2 w lines t ''
+EOF
+    done
+	cd ../
+done
+
+}
+
+
+graphs(){
+for d in $(ls -d ./run*); do
+	cd ${d}
+	awk '{if($1=="sigma"){print $5, $6, $7, $8}}' output > sigmaDependence
+
+gnuplot << EOF
+set xlabel '{/Symbol s}'
+set term pdf enhanced
+
+set ylabel 'Time spend in random\_rot [ms]'
+set output 'sigma_time.pdf'
+plot 'sigmaDependence' u 1:(\$2*1000) w lp t ''
+
+set ylabel 'Reject probability'
+set output 'sigma_reject.pdf'
+plot 'sigmaDependence' u 1:3 w lp t ''
+
+set ylabel 'Reject probability All'
+set output 'sigma_reject_all.pdf'
+plot 'sigmaDependence' u 1:3 w lp t ''
+
+EOF
+	cd ../
+done
+
+    awk '{
+	if(FNR==NR){
+		if(FNR==1){file=1;}
+		sigma[FNR]=$1;
+		time[FNR][file]=$2;
+		reject[FNR][file]=$3;
+		rejectAll[FNR][file]=$4;
+	}else{
+		if(FNR==1){file++;}
+		time[FNR][file]=$2;
+		reject[FNR][file]=$3;
+		rejectAll[FNR][file]=$4;
+	}
+	}
+	END{
+		## get mean of each column
+		for(l=1;l<=FNR;l++){
+			for(i=1;i<=file;i++){
+				meanTime[l]+=time[l][i]/file;
+				meanReject[l]+=reject[l][i]/file;
+				meanRejectAll[l]+=rejectAll[l][i]/file;
+			}
+		}
+		## get standard deviation
+		for(l=1;l<=FNR;l++){
+			for(i=1;i<=file;i++){
+				stdTime[l]+=((time[l][i]-meanTime[l])**2)/file;
+				stdReject[l]+=((reject[l][i]-meanReject[l])**2)/file;
+				stdRejectAll[l]+=((rejectAll[l][i]-meanRejectAll[l])**2)/file;
+			}
+		}
+		## print it out
+		for(l=1;l<=FNR;l++){
+			printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\n", sigma[l], meanTime[l], sqrt(stdTime[l]), meanReject[l], sqrt(stdReject[l]), meanRejectAll[l], sqrt(stdRejectAll[l]));
+		}
+	}' $(ls run*/sigmaDependence) > meanResults
+
+gnuplot << EOF
+set xlabel '{/Symbol s}'
+set term pdf enhanced
+
+set ylabel 'Time spend in random\_rot [ms]'
+set output 'sigma_time.pdf'
+plot 'meanResults' u 1:(\$2*1000):(\$3*1000) w yerrorbars lc 1 t '', '' u 1:(\$2*1000) w l lc 1 t ''
+
+set ylabel 'Reject probability'
+set output 'sigma_reject.pdf'
+plot 'meanResults' u 1:4:5 w yerrorbars lc 1 t '', '' u 1:4 w l lc 1 t ''
+
+set ylabel 'Reject probability All'
+set output 'sigma_rejectAll.pdf'
+plot 'meanResults' u 1:6:7 w yerrorbars lc 1 t '', '' u 1:6 w l lc 1 t ''
+
+EOF
+}
+
