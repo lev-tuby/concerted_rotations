@@ -16,32 +16,66 @@ printf ("\n CHECKPOINT *** %s ***\n \n", message);
 
 }
 
-void error(char message[], char *path, int line)
+/**
+ * @brief Standard ERROR message
+ *
+ * Call of function results in program termination
+ *
+ * @param[in]  msg              Text of error message printed in comand line.
+ * @param[in]  *path            Path to file where error was raised.
+ * @param[in]  line             Line number from where error was rised.
+ *
+ * @return \c void
+ */
+void error(char msg[], char *path, int line)
 {
-    fprintf(stderr,"ERROR:\n%s\nIn file:%s line:%d\n", message, path, line);
+    fprintf(stderr,"ERROR:\t%s\nIn file:%s line:%d\n", msg, path, line);
     fflush(stderr);
     abort();
 }
 
-void warning(char message[], char *path, int line)
+/**
+ * @brief Standard WARNING message
+ *
+ * Call of function results in rising warrning message if number of already rised warning is smaller then maximal number of allowed warnings.
+ * If number of warnings reach maximal number <c>global_max_warn</c> program is terminated and place from where warning was generated is shown.
+ *
+ * @param[in]  msg              Text of error message printed in comand line.
+ * @param[in]  *path            Path to file where error was raised.
+ * @param[in]  line             Line number from where error was rised.
+ *
+ * @return \c void
+ */
+void warning(char msg[], char *path, int line)
 {
     if (global_warn < global_max_warn)
     {
-        fprintf(stderr, "WARNING:\n%s\n", message);
+        fprintf(stderr, "WARNING:\t%s\n", msg);
         fflush(stderr);
         global_warn++;
     }
     else
     {
-        fprintf(stderr, "WARNING:\n%s\nIn file:%s line:%d\n", message, path, line);
+        fprintf(stderr, "WARNING:\t%s\nIn file:%s line:%d\n", msg, path, line);
         fflush(stderr);
         abort();
     }
 }
 
-void info(char message[], char *path, int line)
+/**
+ * @brief Standard INFO message
+ *
+ * Call of this function print out INFO message ... should contain inportant informations or hints for simulation.
+ *
+ * @param[in]  msg              Text of error message printed in comand line.
+ * @param[in]  *path            Path to file where error was raised.
+ * @param[in]  line             Line number from where error was rised.
+ *
+ * @return \c void
+ */
+void info(char msg[], char *path, int line)
 {
-    fprintf(stdout, "INFO:\n%s\n", message);
+    fprintf(stdout, "INFO:\t%s\n", msg);
     fflush(stdout);
 }
 
