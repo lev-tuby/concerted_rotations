@@ -4,17 +4,20 @@
 histogram * histogram_init(double min, double max, double number_of_bins, double alpha) 
 {
 /* Errors and Warning Handling */
+    char
+        msg[1024];
+
     if (min >= max)
     {
-        printf("Maximal value in histogram have to be larger then minimal!!!\n");
-        return NULL;
+        snprintf(msg, sizeof(msg), "Maximal value in histogram have to be larger then minimal!\nminimal: %g | maximal %g", min, max);
+        error(msg, __FILE__, __LINE__);
     }
     if (number_of_bins <= 0)
     {
-        printf("Number of bins can not be lower then 0!!\n");
-        return NULL;
+        error("Number of bins can not be lower then 0!\n", __FILE__, __LINE__);
     }
-    printf("INFO: Initial size of histogram and free energy is 2x %g\n", sizeof(double)*number_of_bins);
+    snprintf(msg, sizeof(msg), "Initial size of histogram and free energy is 2x %g.\n", sizeof(double)*number_of_bins);
+    info(msg, __FILE__, __LINE__);
 /*-----------------------------*/
 
     histogram 
@@ -57,14 +60,26 @@ void histogram_add_dimension(double min, double max, double number_of_bins, hist
     // resize 1D array
     // adding dimension to histogram with values will rise warning since it arase all date ... since we cant asigne old date to any new value ... might be changed but do we need it ?
 /* Errors and Warning Handling */
-    if ( histo->N != 0 ) // WARRNING
+    char
+        msg[1024];
+
+    if (min >= max)
     {
-        printf("We are adding dimension to non-empty histogram ... do not do that ... it is something u probably do not want to do!\n");
+        snprintf(msg, sizeof(msg), "Maximal value in histogram have to be larger then minimal!\nminimal: %g | maximal %g", min, max);
+        error(msg, __FILE__, __LINE__);
     }
-    if ( histo->dimension >= MAX_HISTOGRAM_DIMENSION ) //ERROR
+    if (number_of_bins <= 0)
     {
-        printf("blabla\n");
-        return;
+        error("Number of bins can not be lower then 0!\n", __FILE__, __LINE__);
+    }
+    if ( histo->N != 0 )
+    {
+        warning("We are adding dimension to non-empty histogram ... do not do that ... it is something you probably do not want to do!", __FILE__, __LINE__);
+    }
+    if ( histo->dimension >= MAX_HISTOGRAM_DIMENSION )
+    {
+        snprintf(msg, sizeof(msg), "You reach maximal histogram dimension (%d)!\nMaximal histogram dimension could be changed in histogram.h", MAX_HISTOGRAM_DIMENSION);
+        error(msg, __FILE__, __LINE__);
     }
 /*-----------------------------*/
 
@@ -82,18 +97,18 @@ void histogram_add_dimension(double min, double max, double number_of_bins, hist
 
     //now expand 1D arrays
     new_frequency = (int *) realloc ( histo->frequency, (size_t) number_of_all_bins * sizeof(int));
-    if ( new_frequency == NULL) //ERROR
+    if ( new_frequency == NULL)
     {
-        printf("Memory: was not possible to realloc histogram in histogram_add_dimension(...)!\nSize of new histogram was: %lf MB\n", number_of_all_bins*sizeof(int)*2*BYTES_TO_MB);
-        return;
+        snprintf(msg, sizeof(msg), "Memory: was not possible to realloc histogram in histogram_add_dimension(...)!\nSize of new histogram was: %lf MB\n", number_of_all_bins*sizeof(int)*2*BYTES_TO_MB);
+        error(msg, __FILE__, __LINE__);
     }
     histo->frequency   = new_frequency;
 
     new_free_energy = (double *) realloc ( histo->free_energy, (size_t) number_of_all_bins * sizeof(double));
-    if ( new_free_energy == NULL) //ERROR
+    if ( new_free_energy == NULL)
     {
-        printf("Memory: was not possible to realloc histogram in histogram_add_dimension(...)!\nSize of new histogram was: %lf MB\n", number_of_all_bins*sizeof(double)*2*BYTES_TO_MB);
-        return;
+        snprintf(msg, sizeof(msg), "Memory: was not possible to realloc histogram in histogram_add_dimension(...)!\nSize of new histogram was: %lf MB\n", number_of_all_bins*sizeof(int)*2*BYTES_TO_MB);
+        error(msg, __FILE__, __LINE__);
     }
     histo->free_energy = new_free_energy;
 
@@ -175,7 +190,7 @@ void histogram_add_safe(double *point, histogram *histo)
         intermediate = (int)((point[i] - histo->min[i]) * histo->bin_size_inv[i]);
         if( intermediate >= histo->number_of_bins[i] )
         {
-            printf("EPIC TERRORR we are out of histogram ... \n");
+            error("Sample can not be read form outside of histogram!", __FILE__, __LINE__);
         }
         index += intermediate * multi;
         multi *= histo->number_of_bins[i];
@@ -241,7 +256,7 @@ double histogram_free_energy_safe(double *point, histogram *histo)
         intermediate = (int)((point[i] - histo->min[i]) * histo->bin_size_inv[i]);
         if( intermediate >= histo->number_of_bins[i] )
         {
-            printf("EPIC TERRORR we are out of histogram ... \n");
+            error("Sample can not be added outside of histogram!", __FILE__, __LINE__);
         }
         index += intermediate * multi;
         multi *= histo->number_of_bins[i];
@@ -277,7 +292,7 @@ double histogram_frequency_safe(double *point, histogram *histo)
         intermediate = (int)((point[i] - histo->min[i]) * histo->bin_size_inv[i]);
         if( intermediate >= histo->number_of_bins[i] )
         {
-            printf("EPIC TERRORR we are out of histogram ... \n");
+            error("Sample can not be read from outside of histogram!", __FILE__, __LINE__);
         }
         index += intermediate * multi;
         multi *= histo->number_of_bins[i];
@@ -289,15 +304,15 @@ double histogram_frequency_safe(double *point, histogram *histo)
 void histogram_print(char *filename, char *format, histogram *histo)//would be nice to specifie format of data ... that can be easyli printed via gnuplot etc.
 {
     char
-        error[1024];
+        msg[1024];
 
     FILE
         *histogram_out;
 
     if ((histogram_out=fopen(filename,"w"))==NULL)
     {
-        sprintf(error,"Could not open file %s (%s).\n",filename,"w");
-        failed(error);
+        snprintf(msg, sizeof(msg), "Could not open file %s (%s).\n",filename,"w");
+        error(msg, __FILE__, __LINE__);
     }
     // printing is done in format for gnuplot matrix ... so it is just reprint of matrix in memory
     if (strcmp(format, "matrix2d") == 0)
@@ -311,10 +326,12 @@ void histogram_print(char *filename, char *format, histogram *histo)//would be n
             fprintf(histogram_out, "\n");
         }
     }else{
-        printf("No other methods implemented sofar\n");
+        warning("No other methods implemented so far!", __FILE__, __LINE__);
     }
 
     fclose(histogram_out);
 }
+
+
 
 

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "my_memory.h"
+#include "messages.h"
 
 #define MAX_HISTOGRAM_DIMENSION 8
 #define BYTES_TO_MB 0.000000954

@@ -60,6 +60,10 @@ int acceptMove(mc_traj_data *mctrj);
 void CAT_copy(cat_prot *dest, cat_prot *orig);
 void Init_MC(mc_move_data **mvdt, mc_traj_data **mc_traj, char file_conf[1024],char file_pot[1024]);
 
+    int global_warn=0;
+    int global_max_warn=0;
+
+
 int main(int argc, char *argv[])
 {
     int
