@@ -1,6 +1,25 @@
+/**
+ * @file
+ * @brief Source file for all functions for work with histogram structure
+ * Well not much else to say ...
+ * @todo Add methods to save and load histogram in binary and text format
+ */
 #include "histogram.h"
 
 
+/**
+ * @brief Initialization of 1D histogram
+ *
+ * Function return histogram structure of 1D histogram.
+ * To add more dimensions to existing histogram see histogram_add_dimension().
+ *
+ * @param[in]  min              Minimal value of histogram in 1D histogram.
+ * @param[in]  max              Maximal value of histogram in 1D histogram.
+ * @param[in]  number_of_bins   Number of bins in 1D histogram.
+ * @param[in]  alpha            Initial value of microcanonical entropy change \f$\alpha\f$, used in Wang and Landau algorithm.
+ *
+ * @return histogram            Initialized 1D histogram structure.
+ */
 histogram * histogram_init(double min, double max, double number_of_bins, double alpha) 
 {
 /* Errors and Warning Handling */
@@ -55,10 +74,21 @@ histogram * histogram_init(double min, double max, double number_of_bins, double
     return histo;
 }
 
+/**
+ * @brief Function add one dimension to existing histogram
+ *
+ * Function modifie histogram structure by adding one aditional dimension.
+ * <b>Function set all values in histogram and free energy to 0.0!</b>
+ *
+ * @param[in]       min              Minimal value of histogram in additional dimension.
+ * @param[in]       max              Maximal value of histogram in additional dimension.
+ * @param[in]       number_of_bins   Number of bins in additional dimension.
+ * @param[in,out]   *histo           Histogram strucure to whcih dimension is added.
+ *
+ * @return \c void
+ */
 void histogram_add_dimension(double min, double max, double number_of_bins, histogram *histo)
 {
-    // resize 1D array
-    // adding dimension to histogram with values will rise warning since it arase all date ... since we cant asigne old date to any new value ... might be changed but do we need it ?
 /* Errors and Warning Handling */
     char
         msg[1024];
@@ -127,6 +157,13 @@ void histogram_add_dimension(double min, double max, double number_of_bins, hist
     histo->dimension++;
 }
 
+/**
+ * @brief Free memory ocupied by histogram structure
+ *
+ * @param[in,out]   *histo           Pointer to histogram structure to be deallocated.
+ *
+ * @return \c void
+ */
 void histogram_free(histogram *histo)
 {
     free_i1t(histo->frequency);
@@ -156,9 +193,22 @@ void histogram_save_bin(char *filename, histogram *histo)
 }
 */
 
+/**
+ * @brief Function add sample to histogram
+ *
+ * Function add 1 to bin coresponding to coordinates in point in N-dimensional histogram.
+ * Function also update <c>free_energy</c> by adding alpha to particular bin.
+ * Function also increase counter of samples in histogram <c>N</c>.
+ * <b>Point should have same dimesnion as histogram! Function do not check if point has same dimesnion as histogram!</b>
+ * <b>Function do not check if point belongs to histogram (migh cause acces to wrong memory)!</b>
+ *
+ * @param[in]       *point      N-dimensional value to be added in particular bin in histogram.
+ * @param[in,out]   *histo      Histogram strucure to whcih sample is added.
+ *
+ * @return \c void
+ */
 void histogram_add(double *point, histogram *histo)
 {
-// function take value in N-dimensional space and transfer and add 1 to particular bin in histogram
     int
         index   = 0;// index in 1D array coresponding to coordinates in N-dimensional array
 
@@ -175,10 +225,21 @@ void histogram_add(double *point, histogram *histo)
     histo->N++;
 }
 
+/**
+ * @brief Function add sample to histogram
+ *
+ * Function add 1 to bin coresponding to coordinates in point in N-dimensional histogram if point belong to histogram.
+ * Function also update <c>free_energy</c> by adding alpha to particular bin if point belong to histogram.
+ * Function also increase counter of samples in histogram <c>N</c> if point belong to histogram.
+ * <b>Function do check if point belongs to histogram.</b> If point do not belong to histogram then rise ERROR.
+ *
+ * @param[in]       *point      N-dimensional value to be added in particular bin in histogram.
+ * @param[in,out]   *histo      Histogram strucure to whcih sample is added.
+ *
+ * @return \c void
+ */
 void histogram_add_safe(double *point, histogram *histo)
 {
-// function take value in N-dimensional space and transfer and add 1 to particular bin in histogram
-// check if value is in range of histogram 
     int
         index   = 0,// index in 1D array coresponding to coordinates in N-dimensional array
         intermediate;// index of value[i] in i-th dimension (used for checking if value belongs to interval histo->min[i] to histo->max[i]
@@ -190,7 +251,7 @@ void histogram_add_safe(double *point, histogram *histo)
         intermediate = (int)((point[i] - histo->min[i]) * histo->bin_size_inv[i]);
         if( intermediate >= histo->number_of_bins[i] )
         {
-            error("Sample can not be read form outside of histogram!", __FILE__, __LINE__);
+            error("Sample can not be added outside of histogram!", __FILE__, __LINE__);
         }
         index += intermediate * multi;
         multi *= histo->number_of_bins[i];
@@ -200,10 +261,22 @@ void histogram_add_safe(double *point, histogram *histo)
     histo->N++;
 }
 
-int histogram_add_soft(double *point, histogram *histo) //function return 0 if point is inside histogram boundaries ... if not it returns -1
+/**
+ * @brief Function add sample to histogram
+ *
+ * Function add 1 to bin coresponding to coordinates in point in N-dimensional histogram if point belong to histogram.
+ * Function also update <c>free_energy</c> by adding alpha to particular bin if point belong to histogram.
+ * Function also increase counter of samples in histogram <c>N</c> if point belong to histogram.
+ * <b>Function do check if point belongs to histogram.</b>
+ * If point do not belong to histogram then function return <c>OUT_HISTOGRAM</c> if point belong to histogram then return <c>IN_HISTOGRAM</c>.
+ *
+ * @param[in]       *point      N-dimensional value to be added in particular bin in histogram.
+ * @param[in,out]   *histo      Histogram strucure to whcih sample is added.
+ *
+ * @return <c>OUT_HISTOGRAM</c> or <c>IN_HISTOGRAM</c>
+ */
+int histogram_add_soft(double *point, histogram *histo)
 {
-// function take value in N-dimensional space and transfer and add 1 to particular bin in histogram
-// check if value is in range of histogram 
     int
         index = 0,// index in 1D array coresponding to coordinates in N-dimensional array
         intermediate;// index of value[i] in i-th dimension (used for checking if value belongs to interval histo->min[i] to histo->max[i]
@@ -215,7 +288,7 @@ int histogram_add_soft(double *point, histogram *histo) //function return 0 if p
         intermediate = (int)((point[i] - histo->min[i]) * histo->bin_size_inv[i]);
         if( intermediate >= histo->number_of_bins[i] )
         {
-            return -1;
+            return OUT_HISTOGRAM;
         }
         index += intermediate * multi;
         multi *= histo->number_of_bins[i];
@@ -223,11 +296,21 @@ int histogram_add_soft(double *point, histogram *histo) //function return 0 if p
     histo->frequency[index]++;
     histo->free_energy[index] -= histo->alpha;
     histo->N++;
-    return 0;
+    return IN_HISTOGRAM;
 }
 
-
-double histogram_free_energy(double *point, histogram *histo)
+/**
+ * @brief Function return free energy for given bin
+ *
+ * Function read free energy at given point of histogram.
+ * <b>Function do not check if point belongs to histogram.</b> So that nonsense value can be returned if point is outside of histogram.
+ *
+ * @param[in]       *point      N-dimensional value at which free energy is returned.
+ * @param[in]       *histo      Histogram strucure from where free energy is obtained.
+ *
+ * @return Free energy at <c>point</c>
+ */
+double histogram_free_energy(double *point, const histogram *histo)
 {
     int
         index=0;// index in 1D array coresponding to coordinates in N-dimensional array
@@ -242,7 +325,20 @@ double histogram_free_energy(double *point, histogram *histo)
     return histo->free_energy[index];
 }
 
-double histogram_free_energy_safe(double *point, histogram *histo)
+/**
+ * @brief Function return free energy for given bin
+ *
+ * Function read free energy at given point of histogram.
+ * <b>Function do check if point belongs to histogram.</b>
+ * If point do not belong to histogram then function return <c>OUT_HISTOGRAM</c> if point belong to histogram then return <c>IN_HISTOGRAM</c>.
+ *
+ * @param[in]       *point      N-dimensional value at which free energy is returned.
+ * @param[out]      *value      Free energy at <c>point</c>.
+ * @param[in]       *histo      Histogram strucure from where free energy is obtained.
+ *
+ * @return <c>OUT_HISTOGRAM</c> or <c>IN_HISTOGRAM</c>
+ */
+int histogram_free_energy_safe(double *point, double *value, const histogram *histo)
 {
     int
         index=0,// index in 1D array coresponding to coordinates in N-dimensional array
@@ -256,7 +352,7 @@ double histogram_free_energy_safe(double *point, histogram *histo)
         intermediate = (int)((point[i] - histo->min[i]) * histo->bin_size_inv[i]);
         if( intermediate >= histo->number_of_bins[i] )
         {
-            error("Sample can not be added outside of histogram!", __FILE__, __LINE__);
+            error("Sample can not be read from outside of histogram!", __FILE__, __LINE__);
         }
         index += intermediate * multi;
         multi *= histo->number_of_bins[i];
@@ -264,7 +360,18 @@ double histogram_free_energy_safe(double *point, histogram *histo)
     return histo->free_energy[index];
 }
 
-double histogram_frequency(double *point, histogram *histo)
+/**
+ * @brief Function return frequency for given bin
+ *
+ * Function read frequency at given point of histogram.
+ * <b>Function do not check if point belongs to histogram!</b> So that nonsense value can be returned if point is outside of histogram.
+ *
+ * @param[in]       *point      N-dimensional value at which free energy is returned.
+ * @param[in]       *histo      Histogram strucure from where free energy is obtained.
+ *
+ * @return Frequency at <c>point</c>
+ */
+double histogram_frequency(double *point, const histogram *histo)
 {
     int
         index = 0;  // index in 1D array coresponding to coordinates in N-dimensional array
@@ -278,7 +385,20 @@ double histogram_frequency(double *point, histogram *histo)
     return histo->frequency[index];
 }
 
-double histogram_frequency_safe(double *point, histogram *histo)
+/**
+ * @brief Function return frequency for given bin
+ *
+ * Function read frequency at given point of histogram.
+ * <b>Function do check if point belongs to histogram.</b>
+ * If point do not belong to histogram then function return <c>OUT_HISTOGRAM</c> if point belong to histogram then return <c>IN_HISTOGRAM</c>.
+ *
+ * @param[in]       *point      N-dimensional value at which free energy is returned.
+ * @param[out]      *value      Frequency at <c>point</c>.
+ * @param[in]       *histo      Histogram strucure from where free energy is obtained.
+ *
+ * @return <c>OUT_HISTOGRAM</c> or <c>IN_HISTOGRAM</c>
+ */
+double histogram_frequency_safe(double *point, double *value, const histogram *histo)
 {
     int
         index=0,// index in 1D array coresponding to coordinates in N-dimensional array
@@ -292,7 +412,7 @@ double histogram_frequency_safe(double *point, histogram *histo)
         intermediate = (int)((point[i] - histo->min[i]) * histo->bin_size_inv[i]);
         if( intermediate >= histo->number_of_bins[i] )
         {
-            error("Sample can not be read from outside of histogram!", __FILE__, __LINE__);
+            error("Sample can not be read form outside of histogram!", __FILE__, __LINE__);
         }
         index += intermediate * multi;
         multi *= histo->number_of_bins[i];
@@ -300,8 +420,18 @@ double histogram_frequency_safe(double *point, histogram *histo)
     return histo->frequency[index];
 }
 
-
-void histogram_print(char *filename, char *format, histogram *histo)//would be nice to specifie format of data ... that can be easyli printed via gnuplot etc.
+/**
+ * @brief Function print histogram in selected format to file
+ *
+ * Function so far support only ploting to GNUPLOT matrix format <c>matrix2d</c>/
+ *
+ * @param[in]       *filename       Name of file used for printing histogram.
+ * @param[in]       *format         Constant string that specifies format in which output data are printed.
+ * @param[in]       *histo          Histogram strucure from where data are obtained.
+ *
+ * @return \c void
+ */
+void histogram_print(const char *filename, const char *format, const histogram *histo)//would be nice to specifie format of data ... that can be easyli printed via gnuplot etc.
 {
     char
         msg[1024];
