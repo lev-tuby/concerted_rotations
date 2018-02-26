@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
     histogram
         *psi_phi = histogram_init  (-M_PI, M_PI+0.000001, 180, 0.1);
-    histogram_add_dimension(-M_PI, M_PI, 180+0.000001, psi_phi);
+    histogram_add_dimension(-M_PI, M_PI+0.000001, 180, psi_phi);
 
     mc_move_data
         *mc_mvdt;
