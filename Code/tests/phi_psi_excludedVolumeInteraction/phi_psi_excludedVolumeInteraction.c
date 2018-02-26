@@ -179,6 +179,8 @@ int main(int argc, char *argv[])
     free(en_par->M);
     free(en_par);
     histogram_free(psi_phi);
+    free(point);
+    fclose(dihed_out);
     return 0;
 }
 
@@ -256,6 +258,10 @@ void mc_traj_data_free( mc_traj_data * mctrj)
 	if(mctrj!=NULL)
 	{
 		gsl_rng_free(mctrj->rng_r);
+        CAT_prot_free(mctrj->old.p);
+        free(mctrj->old.Dcontacts);
+        CAT_prot_free(mctrj->new.p);
+        free(mctrj->new.Dcontacts);
 		free(mctrj);
 	}
 }

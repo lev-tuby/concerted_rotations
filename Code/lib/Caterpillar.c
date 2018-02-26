@@ -10,8 +10,8 @@ void 	build_peptide ( gsl_matrix *pep);
 
 cat_prot * CAT_prot_alloc (size_t n_res, size_t n_atom_per_res)
 {
-	cat_prot *p;
-	double  *a;
+	cat_prot *p=NULL;
+	double  *a=NULL;
 	int i;
 	size_t n;
 	if ((p = (cat_prot *)malloc(sizeof(cat_prot)))==NULL)
@@ -43,9 +43,13 @@ cat_prot * CAT_prot_alloc (size_t n_res, size_t n_atom_per_res)
       failed ("CAT_prot_alloc: failed H");
 	if (n_atom_per_res==6)
 	{
-  	if ((p->CB = (double **) malloc (n_res * sizeof (double *))) == NULL)
-			failed ("CAT_prot_alloc: failed CB");
+        if ((p->CB = (double **) malloc (n_res * sizeof (double *))) == NULL)
+            failed ("CAT_prot_alloc: failed CB");
 	}
+    else
+    {
+        p->CB = NULL;
+    }
 	//set up a 2D array
   if ((p->coord[0] = (double *) malloc (n*3 * sizeof (double))) == NULL)
       failed ("d2t: failed n*3");
@@ -800,6 +804,7 @@ int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi )
 	gsl_matrix_view 			Pm_v		=gsl_matrix_view_array(Pm,3,3);
 	gsl_matrix_view 			rot_v 	=gsl_matrix_view_array(rot,3,3);
 	gsl_matrix_view				Rt_v 		=gsl_matrix_view_array(Rt,4,4);
+    gsl_matrix_set_all(&Rt_v.matrix,0.0); // Explicit initialization of Rt(rotation matrix) ... if we want to make valgrind happy
 	gsl_matrix_view				M_v  		=gsl_matrix_submatrix (&Rt_v.matrix,0,0,3,3);
 	//quaternions
 	gsl_vector_view q1_v 	=gsl_vector_view_array(q1,4);
@@ -878,6 +883,7 @@ int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi )
 	gsl_matrix_view gc_v 	= gsl_matrix_view_array(gen_coord,4,6);
 	gsl_matrix_view gcr_v = gsl_matrix_view_array(gen_coord_rot,4,6);
 	gsl_matrix_set_all(&gc_v.matrix,1.0);
+    gsl_matrix_set_all(&gcr_v.matrix,0.0); // Explicit initialization of gcr_v(result matrix) ... if we want to make valgrind happy
 	gsl_matrix_view c_v= gsl_matrix_submatrix(&gc_v.matrix,0,0,3,6);
 	gsl_matrix_memcpy(&c_v.matrix,&pep_v.matrix);
 	error=gsl_blas_dgemm(CblasNoTrans,CblasNoTrans,1.,&Rt_v.matrix,&gc_v.matrix,0.,&gcr_v.matrix);
