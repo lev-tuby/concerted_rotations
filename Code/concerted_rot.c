@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 
     histogram
         *psi_phi = histogram_init  (-M_PI, M_PI+0.000001, 180, 0.1);
-    histogram_add_dimension(-M_PI, M_PI, 180+0.000001, psi_phi);
+    histogram_add_dimension(-M_PI, M_PI+0.000001, 180, psi_phi);
 
     mc_move_data
         *mc_mvdt;
@@ -148,6 +148,8 @@ int main(int argc, char *argv[])
     mc_traj_data_free(mc_trj);
     CATMV_mc_move_data_free(mc_mvdt);
     histogram_free(psi_phi);
+    free(point);
+    fclose(dihed_out);
     return 0;
 }
 
@@ -175,6 +177,10 @@ void mc_traj_data_free( mc_traj_data * mctrj)
 	if(mctrj!=NULL)
 	{
 		gsl_rng_free(mctrj->rng_r);
+        CAT_prot_free(mctrj->old.p);
+        free(mctrj->old.Dcontacts);
+        CAT_prot_free(mctrj->new.p);
+        free(mctrj->new.Dcontacts);
 		free(mctrj);
 	}
 }
