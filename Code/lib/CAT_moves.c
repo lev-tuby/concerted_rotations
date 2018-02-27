@@ -259,9 +259,9 @@ void CATMV_concerted_rot(mc_move_data *ra_data, cat_prot *p, gsl_rng * rng_r, do
 	error = random_rot (bb_out, bb_in,rng_r, sigma);
 	if(error!=GSL_SUCCESS)
 	{
-		//ra_data->N_moved=0;
-		//ra_data->N_pairs=0;
-		return;
+        free_cr_input_data(&bb_in);                                                     //free some memory
+        free_cr_input_data(&bb_out);                                                    //free some memory
+        return;
 	}
 	double w_ip2;
 	for(int i = 0; i < 3; i++)
