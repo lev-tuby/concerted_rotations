@@ -196,34 +196,34 @@ double Ener_total(cat_prot *p,energy_par *ep)
 		for(int j=0;j<p->n_res;j++) {
 			int d= (i>=j)? i-j:j-i;
 			if(d>2) {
-				e_SAW += CATENR_Saw_g(p->CA[i],p->CA[j], CATENR_SAW_CA_CA);
+				e_SAW += CATENR_Saw(p->CA[i],p->CA[j], CATENR_SAW_CA_CA);
 				// in actual application you would have specified which atoms do repulse each other in array with 
 				// defined pair distances ...
 				// Yep, thanks Mirek!
 				//if(p->CB!=0) { 
-					//e_SAW += CATENR_Saw_g(p->CB[i], p->CB[j], CATENR_SAW_CB_CB);
-					//e_SAW += CATENR_Saw_g(p->CB[i], p->CA[j], CATENR_SAW_CB_CA);
+					//e_SAW += CATENR_Saw(p->CB[i], p->CB[j], CATENR_SAW_CB_CB);
+					//e_SAW += CATENR_Saw(p->CB[i], p->CA[j], CATENR_SAW_CB_CA);
 				//}
 				if(e_SAW>0) {
 					printf("AHHH CA SAW clash at i=%d j=%d\n",i,j);
 					return e_SAW; 
 				}
-				e_SAW += CATENR_Saw_g(p->O[i], p->H[j], CATENR_SAW_O_H);
+				e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
 				energ_CaCa+=CATENR_Ca_Ca(p->CA[i],p->residues[i],p->CA[j],p->residues[j],CAT_S-1,ep->M,CATENR_CaCa_PREF);
 				energ_HB	+=CATENR_HB 	(p->H[i],p->N[i],p->O[j],p->C[j],CATENR_HB_PREF);
 				energ_HB	+=CATENR_HB 	(p->H[j],p->N[j],p->O[i],p->C[i],CATENR_HB_PREF);
 			} else if (i!=j) {
-				e_SAW += CATENR_Saw_g(p->O[i], p->O[j], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
-				e_SAW += CATENR_Saw_g(p->H[i], p->H[j], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
-				e_SAW += CATENR_Saw_g(p->C[i], p->C[j], CATENR_SAW_C_C); // C_{i} - C_{i+1, i-1}
+				e_SAW += CATENR_Saw(p->O[i], p->O[j], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
+				e_SAW += CATENR_Saw(p->H[i], p->H[j], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
+				e_SAW += CATENR_Saw(p->C[i], p->C[j], CATENR_SAW_C_C); // C_{i} - C_{i+1, i-1}
 				if (p->CB!=NULL)
 				{
-					e_SAW += CATENR_Saw_g(p->CB[i], p->CB[j], CATENR_SAW_CB_CB); // CB_{i} - CB_{i+1, i-1}
-					e_SAW += CATENR_Saw_g(p->CB[i], p->N[j], CATENR_SAW_CB_N); // CB_{i} - N_{i+1, i-1}
-					e_SAW += CATENR_Saw_g(p->CB[j], p->C[i], CATENR_SAW_CB_C); // CB_{i} - C_{i+1, i-1}
+					e_SAW += CATENR_Saw(p->CB[i], p->CB[j], CATENR_SAW_CB_CB); // CB_{i} - CB_{i+1, i-1}
+					e_SAW += CATENR_Saw(p->CB[i], p->N[j], CATENR_SAW_CB_N); // CB_{i} - N_{i+1, i-1}
+					e_SAW += CATENR_Saw(p->CB[j], p->C[i], CATENR_SAW_CB_C); // CB_{i} - C_{i+1, i-1}
 				}
 			} else if (i==j && p->CB!= NULL) {
-				e_SAW += CATENR_Saw_g(p->O[i], p->CB[j], CATENR_SAW_CB_O); // O_{i} - CB_{i}
+				e_SAW += CATENR_Saw(p->O[i], p->CB[j], CATENR_SAW_CB_O); // O_{i} - CB_{i}
 			}
 			if(e_SAW>0) {
 				printf("AHHH OTHER SAW clash at i=%d j=%d\n",i,j);
@@ -406,10 +406,9 @@ void Compute_delta_en(mc_move_data *mvdt,conf *C, energy_par *ep)
 		int d=r1>=r2? r1-r2:r2-r1;
 		if(d>2) {
 			r =dist_d(p->CA[r1],p->CA[r2],3);
-			//			e_SAW  = CATENR_Saw_eq(r);
-			e_SAW  = CATENR_Saw_eq_g (r, CATENR_SAW_CA_CA);
-			e_SAW += CATENR_Saw_g		 (p->O[r1], p->H[r2], CATENR_SAW_O_H);
-			//   			e_SAW += CATENR_Saw_g(p->CB[r1], p->CB[r2], CATENR_SAW_CB_CB); 
+			e_SAW  = CATENR_Saw_eq (r, CATENR_SAW_CA_CA);
+			e_SAW += CATENR_Saw		 (p->O[r1], p->H[r2], CATENR_SAW_O_H);
+			//   			e_SAW += CATENR_Saw(p->CB[r1], p->CB[r2], CATENR_SAW_CB_CB); 
 			if(e_SAW>0) {
 			 	C->DE=energ_CaCa+energ_HB+energ_Bend+e_SAW;
 				return;
@@ -426,16 +425,16 @@ void Compute_delta_en(mc_move_data *mvdt,conf *C, energy_par *ep)
 				energ_HB	+=CATENR_HB 	(p->H[r2],p->N[r2],p->O[r1],p->C[r1],CATENR_HB_PREF);
 			}
 		} else if (r1 != r2) {
-			e_SAW += CATENR_Saw_g(p->O[r1], p->O[r2], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
-			e_SAW += CATENR_Saw_g(p->H[r1], p->H[r2], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
-			e_SAW += CATENR_Saw_g(p->C[r1], p->C[r2], CATENR_SAW_C_C); // C_{i} - C_{i+1, i-1}
+			e_SAW += CATENR_Saw(p->O[r1], p->O[r2], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
+			e_SAW += CATENR_Saw(p->H[r1], p->H[r2], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
+			e_SAW += CATENR_Saw(p->C[r1], p->C[r2], CATENR_SAW_C_C); // C_{i} - C_{i+1, i-1}
 			if (p->CB!=NULL) {
-				e_SAW += CATENR_Saw_g(p->CB[r1], p->CB[r2], CATENR_SAW_CB_CB); // CB_{i} - CB_{i+1, i-1}
-				e_SAW += CATENR_Saw_g(p->CB[r1], p->N[r2], CATENR_SAW_CB_N); // CB_{i} - N_{i+1, i-1}
-				e_SAW += CATENR_Saw_g(p->CB[r2], p->C[r1], CATENR_SAW_CB_C); // CB_{i} - C_{i+1, i-1}
+				e_SAW += CATENR_Saw(p->CB[r1], p->CB[r2], CATENR_SAW_CB_CB); // CB_{i} - CB_{i+1, i-1}
+				e_SAW += CATENR_Saw(p->CB[r1], p->N[r2], CATENR_SAW_CB_N); // CB_{i} - N_{i+1, i-1}
+				e_SAW += CATENR_Saw(p->CB[r2], p->C[r1], CATENR_SAW_CB_C); // CB_{i} - C_{i+1, i-1}
 			}
 		} else if( p->CB!=NULL && r1==r2) {
-			e_SAW += CATENR_Saw_g(p->O[r1], p->CB[r2], CATENR_SAW_CB_O); // O_{i} - CB_{i}
+			e_SAW += CATENR_Saw(p->O[r1], p->CB[r2], CATENR_SAW_CB_O); // O_{i} - CB_{i}
 		}
 		if(e_SAW>0) {
 			break;

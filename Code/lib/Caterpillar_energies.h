@@ -20,12 +20,10 @@
 
 
 double CATENR_bond 			(double r);
-double CATENR_Saw_eq		(double r);
 double CATENR_Ca_Ca_eq	(int type_i, int type_j, double bond, double **M, double pref);
 double CATENR_Wat_eq		(int type, double contacts,double *Hydrophob,double *treshold,double pref);
-double CATENR_Saw 			(double *r_Ca_i, double *r_Ca_j);
-double CATENR_Saw_g 	    (double *r_atom_i, double *r_atom_j, double saw);
-double CATENR_Saw_eq_g 	(double r, double saw);
+double CATENR_Saw 	    (double *r_atom_i, double *r_atom_j, double saw);
+double CATENR_Saw_eq 	(double r, double saw);
 double CATENR_Ca_Ca 		(double *r_Ca_i, int type_i, double *r_Ca_j, int type_j, int n, double **M,double pref);
 double CATENR_HB  			(double *restrict r_H_i, double *restrict r_N_i, double *restrict r_O_j, double *restrict r_C_j, double pref);
 double CATENR_HB_eq 		(double *r_H_i, double *r_N_i, double *r_O_j, double *r_C_j,double r,double pref);
