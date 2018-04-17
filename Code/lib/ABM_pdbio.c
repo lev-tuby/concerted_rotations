@@ -79,10 +79,10 @@ int PDBIO_test (const char *input_path, const char *output_path)
 	strncpy(props.element,"  ", 2);
 	strncpy(props.charge ,"  ", 2);
 	err = PDBIO_coord2atomlist (coord, serials, at_names, altLocs, resNames, resSeqs, N, props, &atomsB);
-	err = PDBIO_write_all_atoms(out, atomsB);
+	err = PDBIO_write_all_atoms(output_file, atomsB);
 
-	fclose(in);
-    fclose(out);
+	fclose(input_file);
+    fclose(output_file);
 
 	return err;
 }
@@ -257,8 +257,8 @@ int PDBIO_read_all_atoms (FILE *pdb_in, pdb_atom_list **atoms)
         atom;
 
 	pdb_atom_list
-        *old_atoms      = *atoms;
-        *tmp_atoms      = NULL;
+        *old_atoms      = *atoms,
+        *tmp_atoms      = NULL,
         *tmp_atoms_tail = NULL;
 
 	//pdb_atom_list *new_atom;

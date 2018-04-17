@@ -4,22 +4,33 @@
  * @file
  * @brief Header file for all functions to work with PDB formated atom data
  * Contain function for reading and writing PDB files
+ * @todo Functions for getting diferent parts of pdb_atom_list ... are well redundant there might be one function that does that all ...
+ * @todo Also ... pdb_atom list might contain number of atoms there ... 
  */
-// TODO:    functions for getting diferent parts of pdb_atom_list ... are well redundant there might be one function that does that all ...
-//          Also ... pdb_atom list might contain number of atoms there ... 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/** @brief Retrun codes*/
+/** @defgroup PDBIO_RETURN_CODES
+ *  All posible return codes from PDBIO functions
+ *  @{
+ */
+/** @brief Default value used in intialization of PDBIO return values */
 #define PDBIO_DEFAULT           (-1)
+/** @brief Value returned if function succeeded */
 #define PDBIO_SUCCESS 			(0)
+/** @brief Value returned if PDB line is empty */
 #define PDBIO_ERROR_EMPTY_LINE	(1)
+/** @brief Value returned if PDB line is shorther then formate defined length */
 #define PDBIO_ERROR_SHORT_LINE	(2)
+/** @brief Value returned if some of input parameters are NULL pointer */
 #define PDBIO_ERROR_NULL_PTR  	(3)
+/** @brief Value returned if pointer to output values contain data (would cause mem leak!) */
 #define PDBIO_ERROR_OVERWRITE  	(4)
+/** @brief Value not used ... ??? */
 #define PDBIO_ERROR_WRITEMODE  	(5)
+/** @} */ // end of PDBIO_RETURN_CODES
 
 /**
  * @brief Structure for holding PDB parameters of single atom
