@@ -6,21 +6,13 @@
 #include "geom_prop.h"
 
 // More general Saw function ...
-inline double CATENR_Saw_g 	(double *r_atom_i, double *r_atom_j, double saw)
+inline double CATENR_Saw 	(double *r_atom_i, double *r_atom_j, double saw)
 {
 	return dist_d(r_atom_i, r_atom_j, 3) < saw ? CATENR_INFTY : CATENR_ZERO_EN;
 }
-inline double CATENR_Saw_eq_g 	(double r, double saw)
+inline double CATENR_Saw_eq 	(double r, double saw)
 {
 	return r<saw ? CATENR_INFTY : CATENR_ZERO_EN;
-}
-inline double CATENR_Saw 	(double *r_Ca_i, double *r_Ca_j)
-{
-	return dist_d(r_Ca_i,r_Ca_j,3)<CATENR_SAW_radius ? CATENR_INFTY : CATENR_ZERO_EN;
-}
-inline double CATENR_Saw_eq 	(double r)
-{
-	return r<CATENR_SAW_radius ? CATENR_INFTY : CATENR_ZERO_EN;
 }
 
 /*
