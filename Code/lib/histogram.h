@@ -13,12 +13,12 @@
 #include "my_memory.h"
 #include "messages.h"
 
-/** @brief Maximal value of histogram dimensions used in initialization of histogram structure.*/
+/** @brief Maximal value of histogram dimensions used in initialization of histogram structure. */
 #define MAX_HISTOGRAM_DIMENSION 8
-#define BYTES_TO_MB 0.000000954
 
-/** @brief Return values of histogram add/read functions.*/
+/** @brief Return values of histogram add/read if value end up inside histogram range.*/
 #define IN_HISTOGRAM  0
+/** @brief Return values of histogram add/read if value end up outside histogram range.*/
 #define OUT_HISTOGRAM 1
 
 /**
@@ -143,6 +143,6 @@ double histogram_frequency_safe(double *point, double *value, const histogram *h
 void histogram_print(const char *filename, const char *format, const histogram *histo);
 
 
-void histogram_rescale(const histogram *histo);
+//void histogram_rescale(const histogram *histo);
 
-#endif //__HISTOGRAM
+#endif //__HISTOGRAM__

@@ -129,7 +129,7 @@ void histogram_add_dimension(double min, double max, double number_of_bins, hist
     new_frequency = (int *) realloc ( histo->frequency, (size_t) number_of_all_bins * sizeof(int));
     if ( new_frequency == NULL)
     {
-        snprintf(msg, sizeof(msg), "Memory: was not possible to realloc histogram in histogram_add_dimension(...)!\nSize of new histogram was: %lf MB\n", number_of_all_bins*sizeof(int)*2*BYTES_TO_MB);
+        snprintf(msg, sizeof(msg), "Memory: was not possible to realloc histogram in histogram_add_dimension(...)!\nSize of new histogram was: %lf MB\n", number_of_all_bins*sizeof(int)*2*0.001);
         error(msg, __FILE__, __LINE__);
     }
     histo->frequency   = new_frequency;
@@ -137,7 +137,7 @@ void histogram_add_dimension(double min, double max, double number_of_bins, hist
     new_free_energy = (double *) realloc ( histo->free_energy, (size_t) number_of_all_bins * sizeof(double));
     if ( new_free_energy == NULL)
     {
-        snprintf(msg, sizeof(msg), "Memory: was not possible to realloc histogram in histogram_add_dimension(...)!\nSize of new histogram was: %lf MB\n", number_of_all_bins*sizeof(int)*2*BYTES_TO_MB);
+        snprintf(msg, sizeof(msg), "Memory: was not possible to realloc histogram in histogram_add_dimension(...)!\nSize of new histogram was: %lf MB\n", number_of_all_bins*sizeof(int)*2*0.001);
         error(msg, __FILE__, __LINE__);
     }
     histo->free_energy = new_free_energy;

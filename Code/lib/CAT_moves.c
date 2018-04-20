@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Function for manipulation with #CAT_prot strcuture
+ */
+
 #include "CAT_moves.h"
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
@@ -14,22 +19,68 @@
 #include "../generic_move/CR_precomp.h"
 #include "Caterpillar_IO.h"
 
-cr_input_data set_cr_params_phi( cat_prot *p, int c);
-cr_input_data set_cr_params_psi( cat_prot *p, int c);
-double jac_Det(int a, cr_input_data bb_in);
-int solver		(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov);
+/**
+ * @brief Function generate concerted rotation backbone structure format starting from phi angle
+ *
+ * @note Parameters set starts with phi angle of first residue defined by #c value
+ */
+cr_input_data set_cr_params_phi (cat_prot *p, int c);
+
+/**
+ * @brief Function generate concerted rotation backbone structure format starting from psi angle
+ *
+ * @note Parameters set starts with psi angle of first residue defined by #c value
+ */
+cr_input_data set_cr_params_psi(cat_prot *p, int c);
+
+/**
+ * @brief Function determinant of jacobian
+ */
+double jac_Det (int a, cr_input_data bb_in);
+
+/**
+ * @brief Function perform actual solution to concerted rotation
+ *
+ * Function modifie #bb_out data where move is performed on angle with index defined in #angle.
+ * Move size along tangent space in radians is specified in #delta_mov.
+ * If any part of calculation fail GLS error code is returned (for example if iterativ solution of linear system of equations to project system back to mainfold fail).
+ */
+int solver (cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov);
+
+/**
+ * @brief Function to calculate projection to mainfold along tangent space
+ */
 int T7_solver (const gsl_vector *x, void *p, gsl_vector *f);
+
+/**
+ * @brief Function print iteration number and state of liner solver
+ */
 void print_state (int iter, gsl_multiroot_fsolver * s);
 
+/**
+ * @brief Structure contain paramers for solving projection from tangent space to mainfold use din #T7_solver
+ */
 struct rparams {
-	double s;
-	gsl_matrix *B;
-	gsl_vector *wspace;
-	cr_input_data bb_in;
-	cr_input_data bb_out;
+	double          s;          /**< Shift along tangent space. */
+	gsl_matrix      *B;         /**< Orthogonal basis set to tanget space. */
+	gsl_vector      *wspace;    /**< I am lost here Luca? */
+	cr_input_data   bb_in;      /**< Before move backbone configuration defined in interanl coordinates of concerted rotation move for 3 consecutive residues. */
+	cr_input_data   bb_out;     /**< After move backbone configuration defined in interanl coordinates of concerted rotation move for 3 consecutive residues. */
 };
 
-mc_move_data * CATMV_mc_move_data_alloc(int max_move_size,int len)
+/**
+ * @brief Function allocate #mc_move_data structure
+ *
+ * #atom_pair that are moved are initialized to {-1, -1, -1.0}.
+ *
+ * @note moved_res are not initialized
+ * 
+ * @param[in]        max_move_size      Define how many residues could be altered in one move.
+ * @param[in]        len                Length of entire protein.
+ *
+ * @return initialized *#mc_move_data
+ */
+mc_move_data * CATMV_mc_move_data_alloc(int max_move_size, int len)
 {
 	mc_move_data *mvdt=(mc_move_data*)malloc(sizeof(mc_move_data));
 	mvdt->_l1=max_move_size;
@@ -46,6 +97,13 @@ mc_move_data * CATMV_mc_move_data_alloc(int max_move_size,int len)
 	return mvdt;
 }
 
+/**
+ * @brief Function deallocate #mc_move_data structure
+ *
+ * @param[in,out]    mvdt      Deallocated #mc_move_data structure
+ *
+ * @return \c void
+ */
 void CATMV_mc_move_data_free( mc_move_data *mvdt)
 {
 	free(mvdt->moved_res);
@@ -53,8 +111,17 @@ void CATMV_mc_move_data_free( mc_move_data *mvdt)
 	free(mvdt);
 }
 
-
-void CATMV_cranck	(mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
+/**
+ * @brief Function perform crankshaft move on protein
+ *
+ * 
+ * @param[in,out]   *cranck_data      Move data
+ * @param[in,out]   *p                Modified protein
+ * @param[in]       *rng_r            GSL random number generator state
+ *
+ * @return \c void
+ */
+void CATMV_cranck (mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
 {
 	int k;
 	int end;
@@ -120,9 +187,22 @@ void CATMV_cranck	(mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
 	cranck_data->N_pairs=k;
 }
 
+/**
+ * @brief Function perform pivot move on protein
+ *
+ * Pivot move here operate only on ends of protein. How many residues from both ends are affected is determined by #max_move_size.
+ *
+ * @note Tested OK with VMD
+ *
+ * @param[in,out]   *pivot_data       Move data
+ * @param[in,out]   *p                Modified protein
+ * @param[in]       *rng_r            GSL random number generator state
+ * @param[in]        max_move_size    Number of residues from each end to be affected by move
+ *
+ * @return \c void
+ */
 void CATMV_pivot	(mc_move_data *pivot_data, cat_prot *p, gsl_rng *rng_r, int max_move_size)
 {
-	//tested OK with VMD
 	int len,k;
 	double v_1[3];
 	double angle;
@@ -230,6 +310,17 @@ void CATMV_pivot	(mc_move_data *pivot_data, cat_prot *p, gsl_rng *rng_r, int max
 	}
 }
 
+/**
+ * @brief Function perform concerted rotation move on protein
+ *
+ * 
+ * @param[in,out]   *ra_data          Move data
+ * @param[in,out]   *p                Modified protein
+ * @param[in]       *rng_r            GSL random number generator state
+ * @param[in]        sigma            Sigma of normal distribution from which actual move length along tangent space is selected
+ *
+ * @return \c void
+ */
 void CATMV_concerted_rot(mc_move_data *ra_data, cat_prot *p, gsl_rng * rng_r, double sigma)
 {
     // ra_data function only modifie which residues have moved so which pairs should be recalculated for E-change
@@ -331,7 +422,20 @@ void CATMV_concerted_rot(mc_move_data *ra_data, cat_prot *p, gsl_rng * rng_r, do
 	return;
 }
 
-
+/**
+ * @brief Function perform actual solution to concerted rotation
+ *
+ * Function modifie #bb_out data where move is performed on angle with index defined in #angle.
+ * Move size along tangent space in radians is specified in #delta_mov.
+ * If any part of calculation fail GLS error code is returned (for example if iterativ solution of linear system of equations to project system back to mainfold fail).
+ *
+ * @param[in,out]    bb_out           Output backbone configuration
+ * @param[in,out]    bb_in            Input backbone configuration
+ * @param[in]        angle            Index of dihedral angle to be randomly preturbed by value #delta_mov
+ * @param[in]        delta_mov        Size of prturbation to angle with index #angle in radians
+ *
+ * @return GLS erro value
+ */
 int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov)
 {
 	//gsl_vector * T =gsl_vector_alloc(7);
@@ -342,7 +446,7 @@ int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov
 	//solver
   int status;
   size_t  iter = 0;
-  const size_t n = 6;
+  const size_t n = 6; // dimension of multiroot solver ... how many equations are there
 	const gsl_multiroot_fsolver_type *Ts;
   gsl_multiroot_fsolver *s;
   //gsl_vector *x = gsl_vector_alloc (n);
@@ -452,6 +556,16 @@ int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov
 	return status;
 }
 
+/**
+ * @brief Function to calculate projection to mainfold along tangent space
+ *
+ *
+ * @param[in,out]   *x                Solution vector
+ * @param[in,out]   *p                Parameters
+ * @param[in]       *f                Right side vector
+ *
+ * @return GLS erro value
+ */
 int T7_solver (const gsl_vector *x, void *p, gsl_vector *f)
 {
 	//get parameters
@@ -487,6 +601,14 @@ int T7_solver (const gsl_vector *x, void *p, gsl_vector *f)
 	return error;
 }
 
+/**
+ * @brief Function print iteration number and state of liner solver
+ *
+ * @param[in]        iter             Iteration number
+ * @param[in]       *s                GLS multi root solver
+ *
+ * @return \c void
+ */
 void print_state (int iter, gsl_multiroot_fsolver * s)
 {
   printf ("iter = %3u x = % .3f % .3f % .3f % .3f % .3f % .3f"
@@ -506,7 +628,14 @@ void print_state (int iter, gsl_multiroot_fsolver * s)
           gsl_vector_get (s->f, 5));
 }
 
-
+/**
+ * @brief Function determinant of jacobian
+ *
+ * @param[in]        a                Index to which angle determinant is calculated
+ * @param[in]        bb_in            Current configuration of protein backbone in concerted rotation format
+ *
+ * @return determinant
+ */
 double jac_Det(int a, cr_input_data bb_in)
 {
 	int i;
@@ -545,6 +674,16 @@ double jac_Det(int a, cr_input_data bb_in)
 	return J;
 }
 
+/**
+ * @brief Function generate concerted rotation backbone structure format starting from phi angle
+ *
+ * @note Parameters set starts with phi angle of first residue defined by c value
+ *
+ * @param[in]       *p                Backbone reprezentation in #cat_prot format
+ * @param[in]        c                Index of first residue to generate input parameters for concerted rotation
+ *
+ * @return parameters for concerted rotation move
+ */
 cr_input_data set_cr_params_phi( cat_prot *p, int c)
 {
 	int
@@ -620,6 +759,16 @@ cr_input_data set_cr_params_phi( cat_prot *p, int c)
 		return cr_in;
 }
 
+/**
+ * @brief Function generate concerted rotation backbone structure format starting from psi angle
+ *
+ * @note Parameters set starts with psi angle of first residue defined by c value
+ *
+ * @param[in]       *p                Backbone reprezentation in #cat_prot format
+ * @param[in]        c                Index of first residue to generate input parameters for concerted rotation
+ *
+ * @return parameters for concerted rotation move
+ */
 cr_input_data set_cr_params_psi( cat_prot *p, int c)
 {
 	int
@@ -695,6 +844,19 @@ cr_input_data set_cr_params_psi( cat_prot *p, int c)
 		return cr_in;
 }
 
+/**
+ * @brief Function that concerted rotation
+ *
+ * Function take initial backbone configuration generated either via #set_cr_params_phi or #set_cr_params_psi and width of normal distribution sigma from where
+ * move size is selected and return modified backbone configuration in concerted rotation format.
+ *
+ * @param[in,out]    bb_out           Output peptide backbone configuration described in concerted rotation format
+ * @param[in,out]    bb_in            Input peptide backbone configuration described in concerted rotation format
+ * @param[in,out]   *rng_r            State of GLS random generator
+ * @param[in]        sigma            Width of normal distribution used for selection of move length along tangent space
+ *
+ * @return GLS error code
+ */
 int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double sigma)
 {
 	int error,a,i,m;

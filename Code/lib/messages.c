@@ -2,18 +2,39 @@
 #include <stdio.h>
 #include "messages.h"
 
+/** @brief Global counter of warnings raised.*/
+int global_warn;
 
+/** @brief Maximal number of warnings that are tolerated.*/
+int global_max_warn;
+
+/**
+ * @brief Fail message
+ *
+ * Wrapper around program termination
+ *
+ * @param[in]  message         Message describing reason for program failure.
+ *
+ * @return \c void
+ */
 void failed (char message[])
 {
-  fprintf (stderr,"Error. \n FAILED *** %s ***\n \n", message);
-  abort ();
-  //exit (1);
+    fprintf (stderr,"Error. \n FAILED *** %s ***\n \n", message);
+    abort();
 }
 
-void checkpoint(char message[]){
-
-printf ("\n CHECKPOINT *** %s ***\n \n", message);
-
+/**
+ * @brief Checkpoint message
+ *
+ * Wrapper around checkpoint output
+ *
+ * @param[in]  message         Message describing state of program.
+ *
+ * @return \c void
+ */
+void checkpoint(char message[])
+{
+    printf ("\n CHECKPOINT *** %s ***\n \n", message);
 }
 
 /**

@@ -1,12 +1,21 @@
 #ifndef __MSG_HDR__
 #define __MSG_HDR__
+/**
+ * @file
+ * @brief Header file for function for typical STDOUT
+ * Contain function for reading and writing PDB files
+ */
 
 /** @brief Global counter of warnings raised.*/
 extern int global_warn;
+
 /** @brief Maximal number of warnings that are tolerated.*/
 extern int global_max_warn;
 
+/** @brief Fail message*/
 void failed (char message[]);
+
+/** @brief Checkpoint message*/
 void checkpoint(char message[]);
 
 /**
@@ -31,5 +40,5 @@ void warning(char message[], char *path, int line);
  */
 void info(char message[], char *path, int line);
 
-#endif //__MSG_HDR
+#endif //__MSG_HDR__
 

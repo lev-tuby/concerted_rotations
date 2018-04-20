@@ -36,21 +36,21 @@
  * @brief Structure for holding PDB parameters of single atom
  */
 typedef struct {
-    int     serial;
-    char    name[5];
-    char    altLoc;
-    char    resName[4];
-    char    chainID;
-    int     resSeq;
-    char    iCode;
+    int     serial;         /**< Atom index. */
+    char    name[5];        /**< Atom name. */
+    char    altLoc;         /**< Alternative loacation. */
+    char    resName[4];     /**< Residue name. */
+    char    chainID;        /**< Chain ID. */
+    int     resSeq;         /**< Residue index. */
+    char    iCode;          /**< iCode. */
     // coordinates
-    float   x;
-    float   y;
-    float   z;
-    float   occupancy;
-    float   tempFactor;
-    char    element[3];
-    char    charge[3];
+    float   x;              /**< Atom x coordinate. */
+    float   y;              /**< Atom y coordinate. */
+    float   z;              /**< Atom z coordinate. */
+    float   occupancy;      /**< Occupancy factor. */
+    float   tempFactor;     /**< Temperature factor. */
+    char    element[3];     /**< Element type. */
+    char    charge[3];      /**< Atomic charge. */
 } pdb_atom;
 
 /**
@@ -59,9 +59,9 @@ typedef struct {
  * Simple linked list of pdb_atom structures.
  */
 struct _pdb_atom_list{
-	pdb_atom values;
-	struct _pdb_atom_list *prev_atom;
-	struct _pdb_atom_list *next_atom;
+	pdb_atom values;                    /**< Actual atom strucutre in linked list. */
+	struct _pdb_atom_list *prev_atom;   /**< Link to previous atom. */
+	struct _pdb_atom_list *next_atom;   /**< Link to next atom. */
 	//struct _pdb_atom_list *last_atom;
 };
 typedef struct _pdb_atom_list pdb_atom_list;

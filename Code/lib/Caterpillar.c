@@ -1,3 +1,13 @@
+/**
+ * @file
+ * @brief Function for manipulation of Cterpillar peptide backbone
+ * @todo There are some large comented regions which might be good to remove if not relevant anymore.
+ * @todo Some functions might still need refinement ... regarding how they are written.
+ * @todo CAT_prot_dihedrals and compute_dihedrals does same thing ... I would leave only one ...
+ * @todo ... too many functions for dihedral calculation ... it would be best to have one that calcualte from 4 atoms then one that does from rezidue in protein and one that calculate for all residues
+ * @note What about gly residue and CB atom ... how to treat that ... keep CB there but do not use it probbably ...
+ */
+
 #include "Caterpillar.h"
 #include "./messages.h"
 #include "./my_geom.h"
@@ -5,96 +15,125 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
 #include "./quaternions.h"
-//prototypes for internal use
-void 	build_peptide ( gsl_matrix *pep);
 
+/**
+ * @brief prototypes for internal use
+ *
+ */
+void build_peptide ( gsl_matrix *pep);
+
+/**
+ * @brief Function initialize cat_prot strucure
+ *
+ * All coordinates are set to 0.0, all dihedrals are set to 0.0. p->=n_res*n_atom_per_res, p->n_res=n_res, p->n_atom_per_res=n_atom_per_res, p->residues[i]=-1, p->contacts[i]=-1.0.
+ * Atoms are aliased ... it is kind of dangerous though. It remains unclear how optimization is affected inside a function.
+ * 
+ * @param[in]        n_res           Number of residues in peptide
+ * @param[in]        n_atom_per_res  Number of atoms in each residue
+ *
+ * @return initialized empty *cat_prot
+ */
 cat_prot * CAT_prot_alloc (size_t n_res, size_t n_atom_per_res)
 {
-	cat_prot *p=NULL;
-	double  *a=NULL;
-	int i;
-	size_t n;
-	if ((p = (cat_prot *)malloc(sizeof(cat_prot)))==NULL)
-	{
-		failed("CAT_prot_alloc failed allocating p");
-	}
-	//Allocate  arrays
-	n = n_res*n_atom_per_res;
-  if ((p->residues  = (int *) malloc (n_res * sizeof (int ))) == NULL)
-      failed ("CAT_prot_alloc: failed residues");
-  if ((p->contacts  = (double *) calloc (n_res, sizeof (double))) == NULL)
-      failed ("CAT_prot_alloc: failed contacts");
-  if ((p->phi  = (double *) malloc (n_res * sizeof (double))) == NULL)
-      failed ("CAT_prot_alloc: failed phi");
-  if ((p->psi  = (double *) malloc (n_res * sizeof (double))) == NULL)
-      failed ("CAT_prot_alloc: failed psi");
-  if ((p->coord = (double **) malloc (n * sizeof (double *))) == NULL)
-      failed ("CAT_prot_alloc: failed coord");
-	//pointer aliases
-  if ((p->N  = (double **) malloc (n_res * sizeof (double *))) == NULL)
-      failed ("CAT_prot_alloc: failed N");
-  if ((p->CA = (double **) malloc (n_res * sizeof (double *))) == NULL)
-      failed ("CAT_prot_alloc: failed CA");
-  if ((p->C  = (double **) malloc (n_res * sizeof (double *))) == NULL)
-      failed ("CAT_prot_alloc: failed C");
-  if ((p->O  = (double **) malloc (n_res * sizeof (double *))) == NULL)
-      failed ("CAT_prot_alloc: failed O");
-  if ((p->H  = (double **) malloc (n_res * sizeof (double *))) == NULL)
-      failed ("CAT_prot_alloc: failed H");
-	if (n_atom_per_res==6)
-	{
+    int
+        i;
+    double
+        *a = NULL;
+
+    size_t
+        n;
+    cat_prot
+        *p = NULL;
+
+    if ((p = (cat_prot *)malloc(sizeof(cat_prot))) == NULL)
+    {
+        failed("CAT_prot_alloc failed allocating p");
+    }
+    //Allocate  arrays
+    n = n_res*n_atom_per_res;
+    if ((p->residues  = (int *) malloc (n_res * sizeof (int ))) == NULL)
+        failed ("CAT_prot_alloc: failed residues");
+    if ((p->contacts  = (double *) calloc (n_res, sizeof (double))) == NULL)
+        failed ("CAT_prot_alloc: failed contacts");
+    if ((p->phi  = (double *) malloc (n_res * sizeof (double))) == NULL)
+        failed ("CAT_prot_alloc: failed phi");
+    if ((p->psi  = (double *) malloc (n_res * sizeof (double))) == NULL)
+        failed ("CAT_prot_alloc: failed psi");
+    if ((p->coord = (double **) malloc (n * sizeof (double *))) == NULL)
+        failed ("CAT_prot_alloc: failed coord");
+    //pointer aliases
+    if ((p->N  = (double **) malloc (n_res * sizeof (double *))) == NULL)
+        failed ("CAT_prot_alloc: failed N");
+    if ((p->CA = (double **) malloc (n_res * sizeof (double *))) == NULL)
+        failed ("CAT_prot_alloc: failed CA");
+    if ((p->C  = (double **) malloc (n_res * sizeof (double *))) == NULL)
+        failed ("CAT_prot_alloc: failed C");
+    if ((p->O  = (double **) malloc (n_res * sizeof (double *))) == NULL)
+        failed ("CAT_prot_alloc: failed O");
+    if ((p->H  = (double **) malloc (n_res * sizeof (double *))) == NULL)
+        failed ("CAT_prot_alloc: failed H");
+    if (n_atom_per_res==6)
+    {
         if ((p->CB = (double **) malloc (n_res * sizeof (double *))) == NULL)
-            failed ("CAT_prot_alloc: failed CB");
-	}
+        failed ("CAT_prot_alloc: failed CB");
+    }
     else
     {
         p->CB = NULL;
     }
-	//set up a 2D array
-  if ((p->coord[0] = (double *) malloc (n*3 * sizeof (double))) == NULL)
-      failed ("d2t: failed n*3");
-  for (i = 0; i < n - 1; i++)
-    p->coord[i + 1] = p->coord[i] + 3;
-	//set all coords to zero
-  for (i = 0, a = p->coord[0]; i < n *3; i++)
-    *a++ = 0;
-	//alias the atoms...kind of dangerous though.
-	//It remains unclear how optimization is affected inside a function.
-	p->N[0] =p->coord[ATOM_N];
-	p->CA[0]=p->coord[ATOM_CA];
-	p->C[0] =p->coord[ATOM_C];
-	p->O[0] =p->coord[ATOM_O];
-	p->H[0] =p->coord[ATOM_H];
-	if(n_atom_per_res==6)
-	{
-		p->CB[0]=p->coord[ATOM_CB];
-	}
-	for(i=0; i<n_res-1; i++)
-	{
-		p->CA[i+1]=p->CA[i]+3*n_atom_per_res;
-		p->C [i+1]=p->C [i]+3*n_atom_per_res;
-		p->O [i+1]=p->O [i]+3*n_atom_per_res;
-		p->H [i+1]=p->H [i]+3*n_atom_per_res;
-		p->N [i+1]=p->N [i]+3*n_atom_per_res;
-		if(n_atom_per_res==6)
-		{
-			p->CB[i+1]=p->CB[i]+3*n_atom_per_res;
-		}
-	}
-	p->n_atoms=n;
-	p->n_res=n_res;
-	p->n_atom_per_res=n_atom_per_res;
-	//set all residues and contacts to -1, all angles  to zero
-	for(i=0;i<n_res;i++)
-	{
-		p->residues[i]=-1;
-		p->contacts[i]=-1.0;
-		p->phi[i]=0.0;
-		p->psi[i]=0.0;
-	}
-	return p;
+    //set up a 2D array
+    if ((p->coord[0] = (double *) malloc (n*3 * sizeof (double))) == NULL)
+        failed ("d2t: failed n*3");
+    for (i = 0; i < n - 1; i++)
+        p->coord[i + 1] = p->coord[i] + 3;
+    //set all coords to zero
+    for (i = 0, a = p->coord[0]; i < n *3; i++)
+        *a++ = 0;
+    //alias the atoms...kind of dangerous though.
+    //It remains unclear how optimization is affected inside a function.
+    p->N[0] =p->coord[ATOM_N];
+    p->CA[0]=p->coord[ATOM_CA];
+    p->C[0] =p->coord[ATOM_C];
+    p->O[0] =p->coord[ATOM_O];
+    p->H[0] =p->coord[ATOM_H];
+    if(n_atom_per_res==6)
+    {
+        p->CB[0]=p->coord[ATOM_CB];
+    }
+    for(i=0; i<n_res-1; i++)
+    {
+        p->CA[i+1] = p->CA[i] + 3 * n_atom_per_res;
+        p->C [i+1] = p->C [i] + 3 * n_atom_per_res;
+        p->O [i+1] = p->O [i] + 3 * n_atom_per_res;
+        p->H [i+1] = p->H [i] + 3 * n_atom_per_res;
+        p->N [i+1] = p->N [i] + 3 * n_atom_per_res;
+        if(n_atom_per_res == 6)
+        {
+            p->CB[i+1] = p->CB[i] + 3 * n_atom_per_res;
+        }
+    }
+
+    p->n_atoms        = n;
+    p->n_res          = n_res;
+    p->n_atom_per_res = n_atom_per_res;
+    //set all residues and contacts to -1, all angles  to zero
+    for(i = 0; i < n_res; i++)
+    {
+        p->residues[i] = -1  ;
+        p->contacts[i] = -1.0;
+        p->phi[i]      =  0.0;
+        p->psi[i]      =  0.0;
+    }
+    return p;
 }
 
+/**
+ * @brief Deallocation of cat_prot structure
+ *
+ * @param[in,out]    *p  cat_prot structure to dealloc
+ *
+ * @return \c void
+ */
 void CAT_prot_free ( cat_prot * p)
 {
 	if(p!=NULL)
@@ -116,9 +155,71 @@ void CAT_prot_free ( cat_prot * p)
 	}
 }
 
+/**
+ * @brief Function print in stdout position of all atoms in protein
+ *
+ * 
+ * @param[in]      *protein        Protein configuration is printed out
+ *
+ * @return \c void
+ */
+void CAT_print(cat_prot *protein)
+{
+    for(int i=0; i<protein->n_res;i++)
+    {
+        printf("Resi: %i\n", i);
+        printf("N:  %g %g %g\n", protein->N[i][0], protein->N[i][1], protein->N[i][2]);
+        printf("CA: %g %g %g\n", protein->CA[i][0], protein->CA[i][1], protein->CA[i][2]);
+        printf("C:  %g %g %g\n", protein->C[i][0], protein->C[i][1], protein->C[i][2]);
+        printf("O:  %g %g %g\n", protein->O[i][0], protein->O[i][1], protein->O[i][2]);
+        printf("H:  %g %g %g\n", protein->H[i][0], protein->H[i][1], protein->H[i][2]);
+        if(protein->n_atom_per_res == 6)
+        {
+            printf("CB: %g %g %g\n", protein->CB[i][0], protein->CB[i][1], protein->CB[i][2]);
+        }
+    }
+}
+
+/**
+ * @brief Function build up cat_prot from dihedral angles
+ *
+ * Build a Caterpillar protein, assuming that the first dihedral angle passed through dihed is a phi angle.
+ * 
+ * @param[in]        n_res          Number of residues in protein
+ * @param[in]        n_atom_per_res Number of atoms in one residue
+ * @param[in]       *orig           Position of first atom (so far it is N)
+ * @param[in]       *dihed          Array of protein dihedral angles starting with phi
+ * @param[in]       *seq            Protein sequnce in one letter code
+ *
+ * @return builded cat_prot
+ */
+cat_prot * CAT_build_from_dihed ( int n_res, size_t n_atom_per_res, double *orig, double *dihed, char *seq)
+{
+	int i,j;
+	cat_prot *p = CAT_prot_alloc( n_res, n_atom_per_res );
+	CAT_set_residues_fasta  (p,n_res, seq);
+	CAT_set_prot_linear(p,orig,0.0);
+	double angle_NCaC;
+	for(i=0;i<n_res;i++)
+	{
+		CAT_add_peptide(p,i,dihed[2*i],dihed[2*i+1],CAT_angle_NCaC);
+	}
+	return p;
+}
+
+/**
+ * @brief Function build up liner protein chain
+ *
+ * Tested OK. LT 02.08.16
+ * 
+ * @param[in,out]   *protein        cat_prot structure to be remodeled
+ * @param[in]        orig[3]        Starting poinf from where peptide chain is build
+ * @param[in]        alpha          Deviation of 
+ *
+ * @return \c void
+ */
 void CAT_set_prot_linear ( cat_prot *protein, double orig[3], double alpha )
 {
-	//Tested OK. LT 02.08.16
 	size_t n_res = protein->n_res;
 	//size_t n_atoms = protein->n_atoms;
 	//size_t n_atom_per_res = protein->n_atom_per_res;
@@ -204,6 +305,44 @@ void CAT_set_prot_linear ( cat_prot *protein, double orig[3], double alpha )
 	}
 }
 
+/**
+ * @brief Function set protein residue types from FASTA string
+ *
+ * 
+ * @param[in,out]   *protein        Protein modified to corespond to FASTA sequnce
+ * @param[in]        Seq_Length     Number of residues in FASTA formated string (*Enc)
+ * @param[in]       *Enc            String of chars coresponding to FASTA code
+ *
+ * @return \c void
+ */
+void CAT_set_residues_fasta ( cat_prot * protein, int Seq_Length, char *Enc)
+{
+	int i,j;
+	char fasta_code[CAT_S]=CAT_FASTA;
+	int cat_aacode[CAT_S]=CAT_AACODE;
+
+
+	if(Seq_Length != protein->n_res)
+	{
+		failed("CAT_set_residues_fasta: Seq_Length and n_res differ.");
+	}
+	for(i=0;i<Seq_Length;i++)
+	{
+		for(j=0;j<CAT_S;j++)
+		{
+			if(Enc[i]==fasta_code[j]) { protein->residues[i]=cat_aacode[j]; }
+		}
+	}
+}
+
+/**
+ * @brief Function add hydrogens to existing peptide backbone
+ *
+ * 
+ * @param[in,out]   *protein        cat_prot structure to be remodeled
+ *
+ * @return \c void
+ */
 void CAT_insert_hydrogens ( cat_prot * protein )
 {
 	int i;
@@ -283,6 +422,54 @@ void CAT_insert_hydrogens ( cat_prot * protein )
 		gsl_vector_free(x);
 	}
 }
+
+/**
+ * @brief Function add pozition o CB atom to given residue of protein
+ *
+ * @todo Check CaCb_versor calculation ... it seems that in the end it is kust -azimut*normal ... and mid part is unimportatnt? since CaCb_versor=-CaCb_versor-azimut*normal???
+ *
+ * @param[in,out]   *protein        Protein in which CB are added
+ * @param[in]        res_i          Residue number to which CB is added
+ * @param[in]        azimut         Azimut angle of CB bond
+ * @param[in]        bond_length    Length of CA-CB bond
+ *
+ * @return \c void
+ */
+void CAT_insert_cbeta 	( cat_prot *protein, int res_i, double azimut, double bond_length	)
+{
+	double CaC[3];
+	double CaN[3];
+	double normal[3];
+	double CaCb_versor[3];
+	cat_prot *p=protein;
+
+	CaC[0]=p->C[res_i][0]-p->CA[res_i][0];
+	CaC[1]=p->C[res_i][1]-p->CA[res_i][1];
+	CaC[2]=p->C[res_i][2]-p->CA[res_i][2];
+
+	CaN[0]=p->N[res_i][0]-p->CA[res_i][0];
+	CaN[1]=p->N[res_i][1]-p->CA[res_i][1];
+	CaN[2]=p->N[res_i][2]-p->CA[res_i][2];
+
+	vecprod_d(CaC,CaN,normal);
+	normalize_d(normal,3);
+
+
+	CaCb_versor[0]=CaC[0]+CaN[0];
+	CaCb_versor[1]=CaC[1]+CaN[1];
+	CaCb_versor[2]=CaC[2]+CaN[2];
+	normalize_d(CaCb_versor,3);
+
+	//This is the versor from the CA to the CB
+	CaCb_versor[0]=-CaCb_versor[0]-azimut*normal[0];
+	CaCb_versor[1]=-CaCb_versor[1]-azimut*normal[1];
+	CaCb_versor[2]=-CaCb_versor[2]-azimut*normal[2];
+	normalize_d(CaCb_versor,3);
+
+	p->CB[res_i][0]=p->CA[res_i][0]+bond_length*CaCb_versor[0];
+	p->CB[res_i][1]=p->CA[res_i][1]+bond_length*CaCb_versor[1];
+	p->CB[res_i][2]=p->CA[res_i][2]+bond_length*CaCb_versor[2];
+}
 /*
 void CAT_rescale( cat_prot *protein)
 {
@@ -359,9 +546,18 @@ void CAT_rescale( cat_prot *p)
 	}
 }
 */
+
+/**
+ * @brief Function correct backbone distortions
+ *
+ * Tested OK. 03.08.16. (A shrinked Caterpillar protein is reinflated to itself)
+ * 
+ * @param[in,out]   *protein        cat_prot structure to be remodeled
+ *
+ * @return \c void
+ */
 void CAT_rescale( cat_prot *protein)
 {
-	//Tested OK. 03.08.16. (A shrinked Caterpillar protein is reinflated to itself)
 	int i,j,k,l;
 	double bond[3];
 	double b;
@@ -788,6 +984,21 @@ void CAT_rescale( cat_prot *protein)
 	free_d2t(X_loc);
 }
 */
+
+/**
+ * @brief Function modifie residue configuration base on dihedrals
+ *
+ * Function reconstruct given residue based on dihedral angles in cat_prot structure.
+ * Tested OK. LT 02.08.16
+ * 
+ * @param[in,out]   *p              cat_prot structure to be remodeled
+ * @param[in]        I              Residue which atom positions are recalculated
+ * @param[in]        phi            PHI angle of given residue
+ * @param[in]        alpha          Deviation of 
+ * @param[in]        psi            PSI angle of given residue
+ *
+ * @return err code
+ */
 int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi )
 {
 	int error;
@@ -900,6 +1111,245 @@ int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi )
 	return error;
 }
 
+/**
+ * @brief Function recalculate protein dihedral angles
+ *
+ * Function iterate through whole protein and recalculate p->phi and p->psi.
+ * 
+ * @param[in,out]   *p        Protein which dihedrals are recalculated
+ *
+ * @return \c void
+ */
+void CAT_prot_dihedrals (cat_prot *protein)
+{
+	int i;
+	for(i=0;i<protein->n_res;i++)
+	{
+		if(i>0)
+		{
+			protein->phi[i]=calc_dihedralf_angle(protein->C[i-1],protein->N[i],protein->CA[i],protein->C[i]);
+		}
+		if(i<protein->n_res-1)
+		{
+			protein->psi[i]=calc_dihedralf_angle(protein->N[i],protein->CA[i],protein->C[i],protein->N[i+1]);
+		}
+	}
+}
+
+/**
+ * @brief Function calculate phi angle of residue in protein
+ *
+ *
+ * @param[in]      *p        Protein from where angle is calculated
+ * @param[in]       c        Index of atom which dihedral is calculated
+ *
+ * @return phi dihedral angle
+ */
+double compute_phi(cat_prot *p,int c)
+{
+	int k;
+	double cs, sn;
+	double v_1[3],v_2[3],w_1[3],w_2[3],w_3[3];
+	double axis[3];
+	//phi
+	if(c>1)
+	{
+		for(k=0;k<3;k++)
+		{
+			v_1 [k] = p->C [c-1][k] -	p->N [c][k];
+		}
+	}
+	else
+	{
+		for(k=0;k<3;k++)
+		{
+			v_1 [k] = p->H [c][k] -	p->N [c][k];
+		}
+	}
+	for(k=0;k<3;k++)
+	{
+		v_2 [k] = p->C [c][k]		-	p->CA[c][k];
+		axis[k] = p->CA[c][k] 	- p->N [c][k];
+	}
+	vecprod_d(v_1,axis,w_1);normalize_d(w_1,3);
+	vecprod_d(v_2,axis,w_2);normalize_d(w_2,3);
+	cs=scal_d(w_1,w_2,3);
+	vecprod_d(w_1,w_2,w_3);
+	sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
+	//p->phi[c]=atan2(sn,cs);
+	return atan2(sn,cs);
+}
+
+/**
+ * @brief Function calculate psi angle of residue in protein
+ *
+ *
+ * @param[in]      *p        Protein from where angle is calculated
+ * @param[in]       c        Index of atom which dihedral is calculated
+ *
+ * @return psi dihedral angle
+ */
+double compute_psi(cat_prot *p,int c)
+{
+	int k;
+	double cs, sn;
+	double v_1[3],v_2[3],w_1[3],w_2[3],w_3[3];
+	double axis[3];
+	//psi
+	if(c<p->n_res-1)
+	{
+		for(k=0;k<3;k++)
+		{
+			v_2 [k] = p->N [c+1][k]	-	p->C [c][k];
+		}
+	}
+	else
+	{
+		for(k=0;k<3;k++)
+		{
+			v_2 [k] = p->O [c][k]	-	p->C [c][k];
+		}
+	}
+	for(k=0;k<3;k++)
+	{
+		v_1 [k] = p->N [c][k] 	-	p->CA[c][k];
+		axis[k] = p->C [c][k] 	- p->CA[c][k];
+	}
+	vecprod_d(v_1,axis,w_1);normalize_d(w_1,3);
+	vecprod_d(v_2,axis,w_2);normalize_d(w_2,3);
+	cs=scal_d(w_1,w_2,3);
+	vecprod_d(w_1,w_2,w_3);
+	sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
+	//p->psi[c]=atan2(sn,cs);
+	return atan2(sn,cs);
+}
+
+/**
+ * @brief Function recalculate protein dihedral angles
+ *
+ * Function iterate through whole protein and recalculate p->phi and p->psi.
+ * 
+ * @param[in,out]   *p        Protein which dihedrals are recalculated
+ *
+ * @return \c void
+ */
+void compute_dihedrals(cat_prot *p)
+{
+	int c,k;
+	double cs, sn;
+	double v_1[3],v_2[3],w_1[3],w_2[3],w_3[3];
+	double axis[3];
+	//phi
+	for(c=1;c<p->n_res;c++)
+	{
+		for(k=0;k<3;k++) 
+		{ 
+			v_1 [k] = p->C [c-1][k] -	p->N [c][k]; 
+			v_2 [k] = p->C [c][k]		-	p->CA[c][k]; 
+			axis[k] = p->CA[c][k] 	- p->N [c][k];
+		}
+		vecprod_d(v_1,axis,w_1);normalize_d(w_1,3);
+		vecprod_d(v_2,axis,w_2);normalize_d(w_2,3);
+		cs=scal_d(w_1,w_2,3);
+		vecprod_d(w_1,w_2,w_3); 
+		sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
+		p->phi[c]=atan2(sn,cs);
+	}
+	//psi
+	for(c=0;c<p->n_res-1;c++)
+	{
+		for(k=0;k<3;k++) 
+		{ 
+			v_1 [k] = p->N [c][k] 	-	p->CA[c][k]; 
+			v_2 [k] = p->N [c+1][k]	-	p->C [c][k]; 
+			axis[k] = p->C [c][k] 	- p->CA[c][k];
+		}
+		vecprod_d(v_1,axis,w_1);normalize_d(w_1,3);
+		vecprod_d(v_2,axis,w_2);normalize_d(w_2,3);
+		cs=scal_d(w_1,w_2,3);
+		vecprod_d(w_1,w_2,w_3); 
+		sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
+		p->psi[c]=atan2(sn,cs);
+	}
+}
+
+/**
+ * @brief Function calculate dihedral from 4 atoms
+ *
+ * This function was taken from LAMMPS.
+ *
+ * @param[in]      *atom_1        Coordinates of atom1 in 3D
+ * @param[in]      *atom_2        Coordinates of atom2 in 3D
+ * @param[in]      *atom_3        Coordinates of atom3 in 3D
+ * @param[in]      *atom_4        Coordinates of atom4 in 3D
+ *
+ * @return dihedral angle between atoms
+ */
+double calc_dihedralf_angle(double *atom_1, double *atom_2, double *atom_3, double *atom_4)
+{
+	double vb1x=0,vb1y=0,vb1z=0,vb2xm=0,vb2ym=0,vb2zm=0,vb3x=0,vb3y=0,vb3z=0;
+	double ax=0,ay=0,az=0,bx=0,by=0,bz=0,rasq=0,rbsq=0,rab;
+	double c=0,s=0;
+	double rgsq,rg;
+	double dihedral=0;
+	char err_msg[1024];
+	//double sinphi=0,rgsq=0;
+	// 1st bond
+	vb1x=atom_1[0]-atom_2[0];
+	vb1y=atom_1[1]-atom_2[1];
+	vb1z=atom_1[2]-atom_2[2];
+	// 2nd bond (opposite direction -- axis)
+	vb2xm=atom_2[0]-atom_3[0];
+	vb2ym=atom_2[1]-atom_3[1];
+	vb2zm=atom_2[2]-atom_3[2];
+	// 3rd bond
+	vb3x=atom_4[0]-atom_3[0];
+	vb3y=atom_4[1]-atom_3[1];
+	vb3z=atom_4[2]-atom_3[2];
+	// c,s calculation
+	ax = vb1y*vb2zm - vb1z*vb2ym;
+	ay = vb1z*vb2xm - vb1x*vb2zm;
+	az = vb1x*vb2ym - vb1y*vb2xm;
+
+	bx = vb3y*vb2zm - vb3z*vb2ym;
+	by = vb3z*vb2xm - vb3x*vb2zm;
+	bz = vb3x*vb2ym - vb3y*vb2xm;
+
+	rasq = ax*ax + ay*ay + az*az;
+	rbsq = bx*bx + by*by + bz*bz;
+	rgsq = vb2xm*vb2xm + vb2ym*vb2ym + vb2zm*vb2zm;
+	rg = sqrt(rgsq);
+
+	//ra2inv = 1.0/rasq;
+	//rb2inv = 1.0/rbsq;
+	//rabinv = sqrt(ra2inv*rb2inv);
+	rab=sqrt(rasq*rbsq);
+
+	c= (ax*bx + ay*by + az*bz)/rab;
+	s= rg*(ax*vb3x + ay*vb3y + az*vb3z)/rab;
+
+
+	//if(c < -1) c=-0.999999999999;
+	//if(c > 1) c=0.9999999999999; // The DBL_EPSILON is there to make sure that the cosphi is always a bit smaller than one otherwise acos returns a NaN
+	dihedral=atan2(s,c);
+	if(isnan(dihedral))
+	{
+		sprintf(err_msg,"%s:%d  cosphi=%g sinphi=%g\n",__FILE__,__LINE__,c,s);
+        printf("DEBUG: d0 %g %g %g | %g %g %g | %g %g %g | %g %g %g\n", atom_1[0], atom_1[1], atom_1[2], atom_2[0], atom_2[1], atom_2[2], atom_3[0], atom_3[1], atom_3[2],atom_4[0], atom_4[1], atom_4[2]);
+		failed(err_msg);
+	}
+	// Calculate dihedral angle
+	//if( scalar(aXb, c) < 0.0 ) *phi = (2.0*M_PI) - *phi;
+	return (dihedral);
+}
+
+/**
+ * @brief Don not know ... Luca?
+ * * 
+ * @param[in,out]   *pep            ???????????????
+ *
+ * @return \c void
+ */
 void build_peptide ( gsl_matrix *pep)
 {
 	double a,b,c,cn;
@@ -960,276 +1410,3 @@ void build_peptide ( gsl_matrix *pep)
 	gsl_matrix_set(pep,2,5,c*sin(theta));
 }
 
-/*
- * Build a Caterpillar protein, assuming that the first dihedral angle passed 
- * through dihed is a phi angle.
- */
-cat_prot * CAT_build_from_dihed 	( int n_res, size_t n_atom_per_res, double *orig, double *dihed, char *seq)
-{
-	int i,j;
-	cat_prot *p = CAT_prot_alloc( n_res, n_atom_per_res );
-	CAT_set_residues_fasta  (p,n_res, seq);
-	CAT_set_prot_linear(p,orig,0.0);
-	double angle_NCaC;
-	for(i=0;i<n_res;i++)
-	{
-		CAT_add_peptide(p,i,dihed[2*i],dihed[2*i+1],CAT_angle_NCaC);
-	}
-	return p;
-}
-
-void CAT_set_residues_fasta 			( cat_prot * protein, int Seq_Length, char *Enc)
-{
-	int i,j;
-	char fasta_code[CAT_S]=CAT_FASTA;
-	int cat_aacode[CAT_S]=CAT_AACODE;
-
-
-	if(Seq_Length != protein->n_res)
-	{
-		failed("CAT_set_residues_fasta: Seq_Length and n_res differ.");
-	}
-	for(i=0;i<Seq_Length;i++)
-	{
-		for(j=0;j<CAT_S;j++)
-		{
-			if(Enc[i]==fasta_code[j]) { protein->residues[i]=cat_aacode[j]; }
-		}
-	}
-}
-
-void compute_dihedrals(cat_prot *p)
-{
-	int c,k;
-	double cs, sn;
-	double v_1[3],v_2[3],w_1[3],w_2[3],w_3[3];
-	double axis[3];
-	//phi
-	for(c=1;c<p->n_res;c++)
-	{
-		for(k=0;k<3;k++) 
-		{ 
-			v_1 [k] = p->C [c-1][k] -	p->N [c][k]; 
-			v_2 [k] = p->C [c][k]		-	p->CA[c][k]; 
-			axis[k] = p->CA[c][k] 	- p->N [c][k];
-		}
-		vecprod_d(v_1,axis,w_1);normalize_d(w_1,3);
-		vecprod_d(v_2,axis,w_2);normalize_d(w_2,3);
-		cs=scal_d(w_1,w_2,3);
-		vecprod_d(w_1,w_2,w_3); 
-		sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
-		p->phi[c]=atan2(sn,cs);
-	}
-	//psi
-	for(c=0;c<p->n_res-1;c++)
-	{
-		for(k=0;k<3;k++) 
-		{ 
-			v_1 [k] = p->N [c][k] 	-	p->CA[c][k]; 
-			v_2 [k] = p->N [c+1][k]	-	p->C [c][k]; 
-			axis[k] = p->C [c][k] 	- p->CA[c][k];
-		}
-		vecprod_d(v_1,axis,w_1);normalize_d(w_1,3);
-		vecprod_d(v_2,axis,w_2);normalize_d(w_2,3);
-		cs=scal_d(w_1,w_2,3);
-		vecprod_d(w_1,w_2,w_3); 
-		sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
-		p->psi[c]=atan2(sn,cs);
-	}
-}
-void CAT_insert_cbeta 	( cat_prot *protein, int res_i, double azimut, double bond_length	)
-{
-	double CaC[3];
-	double CaN[3];
-	double normal[3];
-	double CaCb_versor[3];
-	cat_prot *p=protein;
-
-	CaC[0]=p->C[res_i][0]-p->CA[res_i][0];
-	CaC[1]=p->C[res_i][1]-p->CA[res_i][1];
-	CaC[2]=p->C[res_i][2]-p->CA[res_i][2];
-
-	CaN[0]=p->N[res_i][0]-p->CA[res_i][0];
-	CaN[1]=p->N[res_i][1]-p->CA[res_i][1];
-	CaN[2]=p->N[res_i][2]-p->CA[res_i][2];
-
-	vecprod_d(CaC,CaN,normal);
-	normalize_d(normal,3);
-
-
-	CaCb_versor[0]=CaC[0]+CaN[0];
-	CaCb_versor[1]=CaC[1]+CaN[1];
-	CaCb_versor[2]=CaC[2]+CaN[2];
-	normalize_d(CaCb_versor,3);
-
-	//This is the versor from the CA to the CB
-	CaCb_versor[0]=-CaCb_versor[0]-azimut*normal[0];
-	CaCb_versor[1]=-CaCb_versor[1]-azimut*normal[1];
-	CaCb_versor[2]=-CaCb_versor[2]-azimut*normal[2];
-	normalize_d(CaCb_versor,3);
-
-	p->CB[res_i][0]=p->CA[res_i][0]+bond_length*CaCb_versor[0];
-	p->CB[res_i][1]=p->CA[res_i][1]+bond_length*CaCb_versor[1];
-	p->CB[res_i][2]=p->CA[res_i][2]+bond_length*CaCb_versor[2];
-}
-
-void CAT_prot_dihedrals (cat_prot *protein)
-{
-	int i;
-	for(i=0;i<protein->n_res;i++)
-	{
-		if(i>0)
-		{
-			protein->phi[i]=calc_dihedralf_angle(protein->C[i-1],protein->N[i],protein->CA[i],protein->C[i]);
-		}
-		if(i<protein->n_res-1)
-		{
-			protein->psi[i]=calc_dihedralf_angle(protein->N[i],protein->CA[i],protein->C[i],protein->N[i+1]);
-		}
-	}
-}
-
-void CAT_print(cat_prot *protein)
-{
-    for(int i=0; i<protein->n_res;i++)
-    {
-        printf("Resi: %i\n", i);
-        printf("N:  %g %g %g\n", protein->N[i][0], protein->N[i][1], protein->N[i][2]);
-        printf("CA: %g %g %g\n", protein->CA[i][0], protein->CA[i][1], protein->CA[i][2]);
-        printf("C:  %g %g %g\n", protein->C[i][0], protein->C[i][1], protein->C[i][2]);
-        printf("O:  %g %g %g\n", protein->O[i][0], protein->O[i][1], protein->O[i][2]);
-        printf("H:  %g %g %g\n", protein->H[i][0], protein->H[i][1], protein->H[i][2]);
-        if(protein->n_atom_per_res == 6)
-        {
-            printf("CB: %g %g %g\n", protein->CB[i][0], protein->CB[i][1], protein->CB[i][2]);
-        }
-    }
-}
-
-double calc_dihedralf_angle(double *atom_1, double *atom_2, double *atom_3, double *atom_4)
-{
-	// This function was taken from LAMMPS
-	double vb1x=0,vb1y=0,vb1z=0,vb2xm=0,vb2ym=0,vb2zm=0,vb3x=0,vb3y=0,vb3z=0;
-	double ax=0,ay=0,az=0,bx=0,by=0,bz=0,rasq=0,rbsq=0,rab;
-	double c=0,s=0;
-	double rgsq,rg;
-	double dihedral=0;
-	char err_msg[1024];
-	//double sinphi=0,rgsq=0;
-	// 1st bond
-	vb1x=atom_1[0]-atom_2[0];
-	vb1y=atom_1[1]-atom_2[1];
-	vb1z=atom_1[2]-atom_2[2];
-	// 2nd bond (opposite direction -- axis)
-	vb2xm=atom_2[0]-atom_3[0];
-	vb2ym=atom_2[1]-atom_3[1];
-	vb2zm=atom_2[2]-atom_3[2];
-	// 3rd bond
-	vb3x=atom_4[0]-atom_3[0];
-	vb3y=atom_4[1]-atom_3[1];
-	vb3z=atom_4[2]-atom_3[2];
-	// c,s calculation
-	ax = vb1y*vb2zm - vb1z*vb2ym;
-	ay = vb1z*vb2xm - vb1x*vb2zm;
-	az = vb1x*vb2ym - vb1y*vb2xm;
-
-	bx = vb3y*vb2zm - vb3z*vb2ym;
-	by = vb3z*vb2xm - vb3x*vb2zm;
-	bz = vb3x*vb2ym - vb3y*vb2xm;
-
-	rasq = ax*ax + ay*ay + az*az;
-	rbsq = bx*bx + by*by + bz*bz;
-	rgsq = vb2xm*vb2xm + vb2ym*vb2ym + vb2zm*vb2zm;
-	rg = sqrt(rgsq);
-
-	//ra2inv = 1.0/rasq;
-	//rb2inv = 1.0/rbsq;
-	//rabinv = sqrt(ra2inv*rb2inv);
-	rab=sqrt(rasq*rbsq);
-
-	c= (ax*bx + ay*by + az*bz)/rab;
-	s= rg*(ax*vb3x + ay*vb3y + az*vb3z)/rab;
-
-
-	//if(c < -1) c=-0.999999999999;
-	//if(c > 1) c=0.9999999999999; // The DBL_EPSILON is there to make sure that the cosphi is always a bit smaller than one otherwise acos returns a NaN
-	dihedral=atan2(s,c);
-	if(isnan(dihedral))
-	{
-		sprintf(err_msg,"%s:%d  cosphi=%g sinphi=%g\n",__FILE__,__LINE__,c,s);
-        printf("DEBUG: d0 %g %g %g | %g %g %g | %g %g %g | %g %g %g\n", atom_1[0], atom_1[1], atom_1[2], atom_2[0], atom_2[1], atom_2[2], atom_3[0], atom_3[1], atom_3[2],atom_4[0], atom_4[1], atom_4[2]);
-		failed(err_msg);
-	}
-	// Calculate dihedral angle
-	//if( scalar(aXb, c) < 0.0 ) *phi = (2.0*M_PI) - *phi;
-	return (dihedral);
-}
-
-double compute_phi(cat_prot *p,int c)
-{
-	int k;
-	double cs, sn;
-	double v_1[3],v_2[3],w_1[3],w_2[3],w_3[3];
-	double axis[3];
-	//phi
-	if(c>1)
-	{
-		for(k=0;k<3;k++)
-		{
-			v_1 [k] = p->C [c-1][k] -	p->N [c][k];
-		}
-	}
-	else
-	{
-		for(k=0;k<3;k++)
-		{
-			v_1 [k] = p->H [c][k] -	p->N [c][k];
-		}
-	}
-	for(k=0;k<3;k++)
-	{
-		v_2 [k] = p->C [c][k]		-	p->CA[c][k];
-		axis[k] = p->CA[c][k] 	- p->N [c][k];
-	}
-	vecprod_d(v_1,axis,w_1);normalize_d(w_1,3);
-	vecprod_d(v_2,axis,w_2);normalize_d(w_2,3);
-	cs=scal_d(w_1,w_2,3);
-	vecprod_d(w_1,w_2,w_3);
-	sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
-	//p->phi[c]=atan2(sn,cs);
-	return atan2(sn,cs);
-}
-double compute_psi(cat_prot *p,int c)
-{
-	int k;
-	double cs, sn;
-	double v_1[3],v_2[3],w_1[3],w_2[3],w_3[3];
-	double axis[3];
-	//psi
-	if(c<p->n_res-1)
-	{
-		for(k=0;k<3;k++)
-		{
-			v_2 [k] = p->N [c+1][k]	-	p->C [c][k];
-		}
-	}
-	else
-	{
-		for(k=0;k<3;k++)
-		{
-			v_2 [k] = p->O [c][k]	-	p->C [c][k];
-		}
-	}
-	for(k=0;k<3;k++)
-	{
-		v_1 [k] = p->N [c][k] 	-	p->CA[c][k];
-		axis[k] = p->C [c][k] 	- p->CA[c][k];
-	}
-	vecprod_d(v_1,axis,w_1);normalize_d(w_1,3);
-	vecprod_d(v_2,axis,w_2);normalize_d(w_2,3);
-	cs=scal_d(w_1,w_2,3);
-	vecprod_d(w_1,w_2,w_3);
-	sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
-	//p->psi[c]=atan2(sn,cs);
-	return atan2(sn,cs);
-}

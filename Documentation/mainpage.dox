@@ -1,0 +1,29 @@
+/** @file doc*/
+
+/*! \mainpage Concerted Rotation
+
+
+This manual is divided in the following sections:
+- \subpage Intro
+- \subpage Usage
+- \subpage (README.md)
+
+See README [the other page](README.md) for more info.
+*/
+
+//-----------------------------------------------------------
+
+/*! \page Intro Introduction
+
+Compiling
+=========
+
+*/
+
+//-----------------------------------------------------------
+
+/*! \page Usage Usage
+
+aaaaaa
+*/
+

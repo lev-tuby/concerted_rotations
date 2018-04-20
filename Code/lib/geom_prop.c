@@ -1,17 +1,18 @@
+
 #include "geom_prop.h"
 
-double gyration_radius(double **coord,int N)
-{
-  int i;
-  double cm[3], r2;
-  r2=0;
-  center_of_mass(N,coord,cm);
-  for(i=0;i<N;i++)
-    r2+=pow(dist_d(coord[i],cm,3),2);
-  r2=r2/N;
-  return sqrt(r2);
-}
 
+/**
+ * @brief Function generate inertia tensor from point coordinates and their masses
+ *
+ *
+ * @param[in]     **coord            Set of points.
+ * @param[in]      *mass             Set of masses for each point in **coord\.
+ * @param[in]       N                Number of points/masses in **coord or *mass arrays.
+ * @param[out]     *inrt             GSL matrix containing inertia tensor.
+ *
+ * @return \c void
+ */
 void inertia_tensor (  double **coord, double *mass,int N, gsl_matrix* inrt )
 {
   int i,j;
@@ -20,7 +21,7 @@ void inertia_tensor (  double **coord, double *mass,int N, gsl_matrix* inrt )
   double **cm_coord;
   double xx, yy, zz;
   double xy, xz, yz;
-  double M=0;
+  double M=0; // Mass of whole object
   xx=yy=zz=0.0;
   xy=xz=yz=0.0;
 	cm[0]=cm[1]=cm[2]=0;
@@ -51,6 +52,18 @@ void inertia_tensor (  double **coord, double *mass,int N, gsl_matrix* inrt )
   gsl_matrix_set(inrt,2,1,(yz/(2*M*M)));
 }
 
+/**
+ * @brief Function generate #SYMM_TENS tensor structure from point coordinates and their masses
+ *
+ * Generation of inertia tensor inside function is done by inertia_tensor()\.
+ * Eigenvectors and values are then calculated from inertia tensor.
+ *
+ * @param[in]     **coord            Set of points.
+ * @param[in]      *mass             Set of masses for each point in **coord.
+ * @param[in]       N                Number of points/masses in **coord or *mass arrays.
+ *
+ * @return #SYMM_TENS structure
+ */
 SYMM_TENS * inertia_axes( double **coord, double *mass, int N)
 {
 	SYMM_TENS *inertia;
@@ -70,7 +83,15 @@ SYMM_TENS * inertia_axes( double **coord, double *mass, int N)
 	return inertia;
 }
 
-
+/**
+ * @brief Function calculate asphericity
+ *
+ * @todo Add more info.
+ *
+ * @param[in]      *semiaxis        3D vector.
+ *
+ * @return asphericity coeficient
+ */
 double asphericity(gsl_vector *semiaxis){
   double asph;
   double a,b,c;
@@ -83,6 +104,15 @@ double asphericity(gsl_vector *semiaxis){
   return asph;
 }
 
+/**
+ * @brief Function calculate prolateness
+ *
+ * @todo Add more info.
+ *
+ * @param[in]      *semiaxis        3D vector.
+ *
+ * @return prolateness coeficient
+ */
 double prolateness(gsl_vector *semiaxis){
   double prol;
   double den;
@@ -96,6 +126,28 @@ double prolateness(gsl_vector *semiaxis){
   prol=0.5*(2*a-b-c)*(2*b-a-c)*(2*c-a-b)/den;
   return prol;
 }
+
+/**
+ * @brief Function calculate radius of gyration
+ *
+ *
+ * @param[in]     **coord        N 3D points.
+ * @param[in]       N            Number of points.
+ *
+ * @return radius of gyration
+ */
+double gyration_radius(double **coord,int N)
+{
+  int i;
+  double cm[3], r2;
+  r2=0;
+  center_of_mass(N,coord,cm);
+  for(i=0;i<N;i++)
+    r2+=pow(dist_d(coord[i],cm,3),2);
+  r2=r2/N;
+  return sqrt(r2);
+}
+
 /** @brief Compute envelope tensor???
  */
 /*
@@ -138,7 +190,18 @@ void XXX_tensor(double **coord, int N,  double *mass, gsl_matrix* inrt)
 */
 
 
-//
+/**
+ * @brief Function rotate set of N points along given center and rotation axis by given angle
+ *
+ *
+ * @param[in,out] **coord        N 3D points to be rotated.
+ * @param[in]       N            Number of points.
+ * @param[in]       center       3D point used as center of rotation.
+ * @param[in]       axis         Vector around which rotation is performed.
+ * @param[in]       theta        Angle by which set of points is rotated.
+ *
+ * @return \c void
+ */
 void rotate ( double **coord, int N,double center[3],double axis[3], double theta)
 {
   int i;
@@ -196,6 +259,17 @@ void rotate ( double **coord, int N,double center[3],double axis[3], double thet
 	gsl_matrix_free(R);
 }
 
+/**
+ * @brief Function create orthonormal basis with respect to 3D vector
+ *
+ * Metod use Gram-Schmidt orthogonalization.
+ *
+ * @todo Rename fnction to gram_schmidt ... might be an typo.
+ *
+ * @param[in]      *v            3D vector from which base is calculated.
+ *
+ * @return Orhonormal basis in 3D with *v as one of coordinates
+ */
 gsl_matrix * graham_schmidt ( gsl_vector *v)
 {
 	int n=v->size;

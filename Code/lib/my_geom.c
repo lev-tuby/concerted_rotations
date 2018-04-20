@@ -1,11 +1,27 @@
+/**
+ * @file
+ * @brief Source file for all functions for work vectors and geometric object
+ * @todo Leave only one version of LineFacet(OLD) since they should does same thing.
+ */
+
 #include "my_geom.h"
 
+/** @brief Machine floating point precision (0.000001). */
 #ifndef	EPSIL
-#define EPSIL  0.000000000001 /*0.000001       Machine floating point precision*/
+#define EPSIL  0.000000000001
 #endif
 
 /************ GEOMETRIC ROUTINES ************/
 /*******************************/
+/**
+ * @brief Function calculate cross product of 2 vectors in 3D
+ *
+ * @param[in]      *a                First 3D vector.
+ * @param[in]      *b                Second 3D vector.
+ * @param[out]     *c                Result of \f$\vec{a}\times \vec{b} = \vec{c}\f$.
+ *
+ * @return \c void
+ */
 void vecprod_d (const double *a, const double *b, double *c)
 {
 
@@ -15,6 +31,17 @@ void vecprod_d (const double *a, const double *b, double *c)
 }
 /*******************************/
 
+/**
+ * @brief Function calculate scalar product of 2 vectors in dim D
+ *
+ * @note Function assume both vectors are of dimensin dim. Otherwise it might cause SEGFAULT.
+ *
+ * @param[in]      *a                First dim D dimensional vector.
+ * @param[in]      *b                Second dim D dimensional vector.
+ * @param[in]       dim              Dimension of vectors.
+ *
+ * @return scalar product
+ */
 double scal_d (const double *a, const double *b, int dim)
 {
 
@@ -31,7 +58,16 @@ double scal_d (const double *a, const double *b, int dim)
 /*******************************/
 
 
-
+/**
+ * @brief Function calculate norm of dim D dimensional vector
+ *
+ * @note Function assume both vectors are of dimensin dim. Otherwise it might cause SEGFAULT.
+ *
+ * @param[in]      *a                First dim D dimensional vector.
+ * @param[in]       dim              Dimension of vectors.
+ *
+ * @return length(norm) of vector *a
+ */
 double norm_d (const double *a, int dim)
 {
 
@@ -40,6 +76,17 @@ double norm_d (const double *a, int dim)
 /*******************************/
 
 /*******************************/
+
+/**
+ * @brief Function normalize dim D dimensional vector
+ *
+ * @note Function assume both vectors are of dimensin dim. Otherwise it might cause SEGFAULT.
+ *
+ * @param[in,out]  *a                dim D dimensional vector to be normalized.
+ * @param[in]       dim              Dimension of vectors.
+ *
+ * @return length(norm) of vector *a
+ */
 void normalize_d (double *a, int dim)
 {
   int i;
@@ -55,7 +102,17 @@ void normalize_d (double *a, int dim)
 
 
 /*******************************/
-
+/**
+ * @brief Function calculate Euclidean distance between 2 points in dim D space
+ *
+ * @note Function assume both vectors are of dimensin dim. Otherwise it might cause SEGFAULT.
+ *
+ * @param[in]      *a                First dim D dimensional vector.
+ * @param[in]      *b                Second dim D dimensional vector.
+ * @param[in]       dim              Dimension of vectors.
+ *
+ * @return distance between points
+ */
 double dist_d (const double *a, const double *b, int dim)
 {
 
@@ -73,8 +130,19 @@ double dist_d (const double *a, const double *b, int dim)
 }
 
 /*******************************/
-
-
+/**
+ * @brief Function calculate minimal distance between two line segments in 3D
+ *
+ * First segment is defined as vector p1 - p0 and second as p3 - p2.
+ * @note Vectors have to be in 3D.
+ *
+ * @param[in]       p0               Begining point of first segment.
+ * @param[in]       p1               End point of first segment.
+ * @param[in]       p2               Begining point of second segment.
+ * @param[in]       p3               End point of second segment.
+ *
+ * @return minimal distance two line segments
+ */
 double dist_segments(const double p0[3], const double p1[3], const double p2[3], const double p3[3]){
 
   double d02[3],d32[3],d10[3], pa[3], pb[3], mua, mub, min_dist;
@@ -121,16 +189,25 @@ double dist_segments(const double p0[3], const double p1[3], const double p2[3],
   return(min_dist);
 }
 
-
-/*
-     Determine whether or not the line segment p1,p2
-     Intersects the 3 vertex facet bounded by pa,pb,pc
-     Return true/false and the intersection point p
-     The equation of the line is p = p1 + mu (p2 - p1)
-     The equation of the plane is a x + b y + c z + d = 0
-      n.x x + n.y y + n.z z + d = 0
-*/
-
+/**
+ * @brief Function calculate intersection of line segment and vertex
+ *
+ * Determine whether or not the line segment p1,p2
+ * Intersects the 3 vertex facet bounded by pa,pb,pc
+ * Return true/false and the intersection point p
+ * The equation of the line is p = p1 + mu (p2 - p1)
+ * The equation of the plane is a x + b y + c z + d = 0
+ * n.x x + n.y y + n.z z + d = 0
+ *
+ * @param[in]       p1               Begining point of first segment.
+ * @param[in]       p2               End point of first segment.
+ * @param[in]       pa               First point defining vertex.
+ * @param[in]       pb               Second point defining vertex.
+ * @param[in]       pc               Third point defining vertex.
+ * @param[out]     *p                If function return #TRUE point of intersection.
+ *
+ * @return #TRUE if segment intersect vertex otherwise #FALSE
+ */
 int LineFacet(const double *p1, const double *p2, const double *pa, const double *pb, const double *pc, double *p){
  /* new version 18/5/2009, CM and LT */
    double d;
@@ -206,6 +283,27 @@ int LineFacet(const double *p1, const double *p2, const double *pa, const double
    return(TRUE);
 }
 
+/**
+ * @brief Function calculate intersection of line segment and vertex
+ *
+ * Determine whether or not the line segment p1,p2
+ * Intersects the 3 vertex facet bounded by pa,pb,pc
+ * Return true/false and the intersection point p
+ * The equation of the line is p = p1 + mu (p2 - p1)
+ * The equation of the plane is a x + b y + c z + d = 0
+ * n.x x + n.y y + n.z z + d = 0
+ *
+ * @note Probbably deprecated function just slightly different implementation of LineFacet().
+ *
+ * @param[in]       p1               Begining point of first segment.
+ * @param[in]       p2               End point of first segment.
+ * @param[in]       pa               First point defining vertex.
+ * @param[in]       pb               Second point defining vertex.
+ * @param[in]       pc               Third point defining vertex.
+ * @param[out]     *p                If function return #TRUE point of intersection.
+ *
+ * @return #TRUE if segment intersect vertex otherwise #FALSE
+ */
 int LineFacetOLD(double *p1, double *p2, double *pa, double *pb, double *pc, double *p){
  /* new version 18/5/2009, CM and LT */
    double d;
@@ -278,6 +376,16 @@ int LineFacetOLD(double *p1, double *p2, double *pa, double *pb, double *pc, dou
    return(TRUE);
 }
 
+/**
+ * @brief Function calculate center of mass of given number of 3D points
+ *
+ *
+ * @param[in]       N                Number of of points (N<= number of coords!).
+ * @param[in]     **coord            Array of 3D points.
+ * @param[out]     *cm               Center of mass of N points in **coord.
+ *
+ * @return \c void
+ */
 void center_of_mass(int N, double ** coord, double *cm)
 {
   int i;
@@ -294,17 +402,27 @@ void center_of_mass(int N, double ** coord, double *cm)
   cm[2] /= N;
 }
 
-double find_radius ( int N ,double ** coord, double center[3] )
+/**
+ * @brief Function find square of farthest point from CM of points
+ *
+ * The following is to find the farthest vertex from the center of mass (cm),
+ * by first computing the cm coordinates, then computing the distances of
+ * ALL the vertices to the cm, and finally finding the maximum amongst the
+ * distances. To avoid sqrt, which is repeated Len times in each run, it is 
+ * better to compute the squared distances then find the maximum amongst them...
+ *
+ * @note However, remember to return the sqrt of the found squared radius!
+ *
+ * @param[in]       N                Number of of points (N<= number of coords!).
+ * @param[in]     **coord            Array of 3D points.
+ * @param[out]      center           Center of mass of N points in **coord.
+ *
+ * @return square of farthest point in **coord
+ */
+double find_radius ( int N ,double **coord, double center[3] )
 {
   int i;
   double  r, temp_r;
-  /*
-  The following is to find the farthest vertex from the center of mass (cm),
-   by first computing the cm coordinates, then computing the distances of
-   ALL the vertices to the cm, and finally finding the maximum amongst the
-   distances. To avoid sqrt, which is repeated Len times in each run, it is 
-   better to compute the squared distances then find the maximum amongst them...
-   */
   r = 0.0;
   for( i = 0 ; i < N ; i++ )
   {
@@ -314,10 +432,19 @@ double find_radius ( int N ,double ** coord, double center[3] )
       r = temp_r;
     }		
   }
-  /* ... However, remember to return the sqrt of the found squared radius*/
   return r;	
 }
 
+/**
+ * @brief Function calculate angle \f$\angle ABC\f$ between points *A, *B, and *C
+ *
+ *
+ * @param[in]      *A                3D point.
+ * @param[in]      *B                3D point.
+ * @param[out]     *C                3D point.
+ *
+ * @return \f$\angle ABC\f$ in radians
+ */
 double angle_ABC(double *A,double *B, double *C)
 {
 	int k;
