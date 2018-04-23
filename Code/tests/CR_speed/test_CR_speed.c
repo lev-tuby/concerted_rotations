@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 	int
         N_res=20,               // number of "residues"
         c,                      // number that define the first "residue" from which concerted rotation is done
-        maxIteration=1e4,       // how many concerted rotation are done for each value of sigma
+        maxIteration=1e7,       // how many concerted rotation are done for each value of sigma
         numberOfRejects=0,      // counter for number of rejections due to move acceptance defined in article
         numberOfAllRejects=0;   // counter including also rejection due to fail in solving equtions
    
@@ -58,19 +58,20 @@ int main(int argc, char *argv[])
 	double
         averageTime,            // value used to store average time spend in concerted rotation move
         sigma = 0.05,           // sigma used in concerted rotation move defining sigma of normal distribution of random dispacement in Tangent space
-        dihedrals[N_res][2];    // [x][0] is 
+        dihedrals[N_res][2],    // [x][0] is 
+        sigmas[]={0.05, 0.10, 0.30, 0.60, 0.80, 1.00, 2.00};
 
     if(argc < 2){
         printf("Have to specifie seed for random generator as argument!\n");
         return 1;
     }
 
-    for(int i=0; i <= 50; i++)   // Loop over different sigma parameters
+    for(int i=0; i < 7; i++)   // Loop over different sigma parameters
     {
         averageTime = 0.0;   // reset counters for each sigma
         numberOfRejects = 0; // reset
         numberOfAllRejects = 0; // reset
-        sigma += 0.02 * i;   // modifie sigma
+        sigma = sigmas[i];   // modifie sigma
 
 	    //alloc interface for random rotation
 	    struct cr_input_data bb_in;
