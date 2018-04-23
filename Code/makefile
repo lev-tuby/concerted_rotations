@@ -10,6 +10,9 @@ CFLAGS=-Wall -g -std=c99 -O3 -p -fno-omit-frame-pointer -flto -fstrict-aliasing 
 #CFLAGS=-static -Wall -g -std=c99 -p -fno-omit-frame-pointer -flto -fstrict-aliasing -I/home/mirekj/gsl2.4/include -L/home/mirekj/gsl2.4/lib -DCBETA -Werror=implicit-function-declaration -Werror=incompatible-pointer-types -funsafe-loop-optimizations -march=native
 #CFLAGS=-static -Wall -g -std=c99 -p -fno-omit-frame-pointer -flto -fstrict-aliasing -I/software/gsl-1.16/gcc/include/ -L/software/gsl-1.16/gcc/lib -DCBETA -Werror=implicit-function-declaration -Werror=incompatible-pointer-types -funsafe-loop-optimizations -march=native
 
+minimal.x: minimal.c ./lib/messages.o ./generic_move/CR_DerT7.o ./generic_move/CR_JacT7.o ./generic_move/CR_precomp.o ./generic_move/CR_T7.o
+	$(CC) $(CFLAGS)  $^ -lm -lgsl  -lgslcblas -o $@
+
 concerted_rot.x: concerted_rot.c $(OBJS_geom) $(OBJSCAT) $(OBJSOUT) 
 	$(CC) $(CFLAGS)  $^ -lm -lgsl  -lgslcblas -o $@
 
