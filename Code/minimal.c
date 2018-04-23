@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @brief Minimal implementation of concerted rotation move 
+ * Main purpose is to enable easier implementation in any MC code.
+ */
+
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>

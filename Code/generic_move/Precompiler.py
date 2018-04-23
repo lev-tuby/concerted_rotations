@@ -1,3 +1,7 @@
+##
+# @file
+# @brief Python functions to build interface for mathematica equations 
+#
 
 # coding: utf-8
 

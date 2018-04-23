@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @brief Main implementation of concerted rotation move 
+ * This program is suppose to simulate peptide backbone in Caterpillar model.
+ */
+
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_sf.h>

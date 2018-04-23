@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Program used to evaluate sampling efficiency of concerted rotation as function of sigma
+ */
+
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_sf.h>

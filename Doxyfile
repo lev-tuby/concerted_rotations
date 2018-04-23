@@ -771,7 +771,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = Documentation/mainpage.dox README.md Code/lib/ Code/generic_move/CR_precomp.c Code/generic_move/CR_precomp.h
+INPUT                  = Documentation/mainpage.dox README.md Code/minimal.c Code/concerted_rot.c Code/lib/ Code/tests/ Code/generic_move/CR_precomp.c Code/generic_move/CR_precomp.h Code/generic_move/Precompiler.py
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Program used to evaluate speed of concerted rotation move
+ */
+
 #include <stdio.h>
 #include <math.h>
 #include <time.h>

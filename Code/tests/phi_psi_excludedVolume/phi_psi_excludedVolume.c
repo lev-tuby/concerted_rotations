@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @brief Program used to evalueat efficiency of concerted rotation in constrained space of peptide backbone
+ */
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_sf.h>

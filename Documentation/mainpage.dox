@@ -1,29 +1,141 @@
 /** @file doc*/
 
-/*! \mainpage Concerted Rotation
+/*! \mainpage Concerted rotations of protein backbones using Wolfram Mathematica
 
+Requirements
+=========
 
-This manual is divided in the following sections:
-- \subpage Intro
-- \subpage Usage
-- \subpage (README.md)
-
-See README [the other page](README.md) for more info.
-*/
-
-//-----------------------------------------------------------
-
-/*! \page Intro Introduction
+* Our implementation of the concerted rotations is based on the [Gnu Scientific Library](https://www.gnu.org/software/gsl/), which needs to be installed before compiling the code.
+* For using Precompiler.py python 2.x should be installed.
+* For Mathematica to produce sine/cosine expansion ... version ...
 
 Compiling
 =========
 
+To compile the program, go to the folder `Code` and run:
+
+`make concerted_rot.x`
+
+To run the test program:
+
+`./concerted_rot.x aapot`
+
+Where aapot is the Caterpillar interaction matrix, as published in [Coluzza, PLoS 2014](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0112852).
+The code is primarily written to implement [Caterpillar model](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0112852) for proteins. 
+
+To compile a minimal version of the code that performs concerted rotation on 7 consecutive dihedrals in protein backbone run:
+
+`make minimal.x`
+
+To run the code:
+
+`./minimal.x SEED`
+
+Where SEED is integer number used as a seed for the random number generator.
+The code supplied in the minimal.c should contain all necessary components to perform concerted rotation move and should help to implement Mathematica based library in other software.
+
+In addition, we supply several test codes used in the article (...) for testing concerted rotation performance and behavior on general protein backbone.
+Tests:
+- \subpage Concerted_rotation_speed_test
+- \subpage Backbone_ghost_chain_simulation
+- \subpage Backbone_exclude_volume_simulation
+
 */
 
 //-----------------------------------------------------------
 
-/*! \page Usage Usage
+/*! \page Concerted_rotation_speed_test Concerted rotation speed test
 
-aaaaaa
+This test was used to obtain the speed of our implementation of concerted rotation move as a function of sigma.
+
+Compiling
+=========
+
+`cd Code`
+
+To compile:
+
+`make CR_speed.x`
+
+To run:
+
+`./CR_speed.x SEED > output`
+
+To extract speed of concerted rotation from output use script in Code/tests/CR_speed/plot:
+
+`./plot output`
+
+This will create datafile sigmaDependence and 2 plots: sigma_reject.pdf and sigma_time.pdf.
+sigma_reject.pdf contain rejection probability as a function of sigma and sigma_time.pdf contain information on how long does one concerted rotation last.
+
+Note: Code/tests/CR_speed/meanResults contain mean data for comparison with format: sigma time_mean time_std rejection_mean reject_std
+
+*/
+
+//-----------------------------------------------------------
+
+/*! \page Backbone_ghost_chain_simulation Backbone ghost chain simulation
+
+This test was used to obtain an efficiency of dihedrals pace sampling as a function of sigma.
+
+Compiling
+=========
+
+`cd Code`
+
+To compile:
+
+`make test_phi_psi_flat_histo.x`
+
+To run:
+
+`./test_phi_psi_flat_histo.x aapot > output 2>&1`
+
+Output:
+dihedrals.dat - File contain all dihedral angles of ghost peptide backbone
+data_(sigma value)_time_(iteration number).dat - 2D histogram of phi-psi angles sampled for given sigma at given iteration
+prova.pdb - PDB representation of protein chain as a function of iteration number
+
+To show results copy Code/tests/phi_psi_flat_histo/plot make_histo.sh nad histo_1d.awk to execution directory and run:
+
+`./plot;./make_histo.sh`
+
+This will create phi-psi 2D histogram plot for each histogram in data_(sigma value)_time_(iteration number).dat, dihedral distribution of all dihedrals in ghost peptide, and calculate flatness of each
+histogram based on Bhattacharyya coefficient (BC.dat and BC.pdf).
+
+*/
+
+//-----------------------------------------------------------
+
+/*! \page Backbone_exclude_volume_simulation Backbone exclude volume simulation
+
+This test was used to obtain an efficiency of dihedrals space sampling in constrained space.
+
+Compiling
+=========
+
+`cd Code`
+
+To compile:
+
+`make test_phi_psi_excludedVolume.x`
+
+To run:
+
+`test_phi_psi_excludedVolume.x aapot > output 2>&1`
+
+Output:
+dihedrals.dat - File contain all dihedral angles of ghost peptide backbone
+data_(sigma value)_time_(iteration number).dat - 2D histogram of phi-psi angles sampled for given sigma at given iteration
+prova.pdb - PDB representation of protein chain as a function of iteration number
+
+To show results copy Code/tests/phi_psi_flat_histo/plot to execution directory and run:
+
+`./plot`
+
+This will create phi-psi 2D histogram plot for each histogram in data_(sigma value)_time_(iteration number).dat.
+
+Note: For reference how does Ramachandran plot of our model should look like see reference.pdf.
+
 */
 
