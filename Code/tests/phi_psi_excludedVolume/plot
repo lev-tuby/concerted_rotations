@@ -20,32 +20,62 @@ EOF
     done
 }
 
-bh(){
-awk 'BEGIN{bins=0;entries=0;BC_coeficient=0}
+bh_in_confined_histogram(){
+CUTOFF=$1
+MASK=$2
+DATA=$3
+
+awk -v cutOff=$CUTOFF '
+    BEGIN{
+	allowed_bins=0; #number of allowed bins to which all entries should be theoreticaly distributed
+	entries=0;n     #number of entries in histogram to be equali distributed in allowed_bins
+	file=0;         #counter to tell in which file were are in 1-st 2-nd 3-th
+    }
     {
-        if(NR!=FNR && FNR==1){
-            ## first line second read through matrix
-            ## we calculate mean ocupancy of bin in flat distribution
-            mean_ocupancy=entries/bins;
-            mean_probability=mean_ocupancy/entries;
-        }
-        if(NR==FNR){
-            bins+=NF;
-            for(i=0;i<=NF;i++){
-                entries+=$i;
-            }
-        }else{
-            for(i=0;i<=NF;i++){
-                BC_coeficient+=sqrt(($i/entries) * mean_probability)
-            }
-        }
+	#we use first histogram to produce mask
+	#if part of histogram is alowed then mask[x][y]=1 else mask[x][y]=0
+	if(FNR==1){file+=1;}
+	if (NR==FNR){
+	    for(i=0;i<=NF;i++){
+		if($i >= cutOff){
+		    mask[FNR][i] = 1.0;
+		    allowed_bins+=1.0;
+		} else {
+		    mask[FNR][i] = 0.0;
+		}
+	    }
+	}
+	if(file==2){ # count number of entries in DATA file first
+	    for(i=0;i<=NF;i++){
+		entries+=$i;
+	    }
+	}
+	if(file==3){ #now we have all stuff needed to calculate flattnes of ideal constrained histogram
+	    if(FNR==1){#now we calculate mean population of given bin ....
+		mean_ocupancy=entries/allowed_bins;
+		mean_probability=mean_ocupancy/entries;
+	    }
+	    for(i=0;i<=NF;i++){
+		# now we multiply mean_probabulity by mask ...
+		# since in bins which are allowed there should be mean_probability (mask==1)
+		# while in bins which are disallowd there should be probability =0 (mean_probability * mask(0) = 0)
+		BC_coeficient+=sqrt(($i/entries) * mean_probability * mask[FNR][i]);
+	    }
+	}
     }
     END{
-        print BC_coeficient;
-    }' ${1} ${1}
+#	for(i=0;i<=NF;i++){
+#	    for(ii=0;ii<=NF;ii++){
+#		printf("%i ", mask[i][ii]);
+#	    }
+#	    printf("\n");
+#	}
+	print BC_coeficient;
+    }' ${MASK} ${DATA} ${DATA}
+
 }
 
-rmachandran
+#rmachandran
 
 min=10000;
 step=10000;
@@ -54,7 +84,7 @@ max=4000000;
 sigma=$(ls data_* | head -n 1)
 for iter in $(seq $min $step $max); do
     if [ -f "$(printf "${sigma%%_time*}_time_%08i.dat" $iter)" ]; then
-        echo "$iter $(bh "$(printf "${sigma%%_time*}_time_%08i.dat" $iter)")" >> BC.dat
+        echo "$iter $(bh_in_confined_histogram 5 $(ls data_* | tail -n 1) "$(printf "${sigma%%_time*}_time_%08i.dat" $iter)")" >> BC.dat
     fi
 done
 
