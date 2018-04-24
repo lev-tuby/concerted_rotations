@@ -92,7 +92,8 @@ void Init_MC(mc_move_data **mvdt, mc_traj_data **mc_traj, energy_par **ep, char 
 int main(int argc, char *argv[])
 {
     int
-        maxIter=10e8;
+        maxIter=10e8,
+        moveResult=0;
 
     double
         sigma=0.1,
@@ -172,8 +173,10 @@ int main(int argc, char *argv[])
         }
 
         Compute_energy_new(mc_mvdt,mc_trj,en_par);
-        Metropolis(mc_trj);
+        moveResult += Metropolis(mc_trj);
     } // END MAIN LOOP
+
+    printf("\n\nAcceptedMoves: %i MovesMade: %i AcceptanceProbability: %f\n\n", moveResult, maxIter, moveResult/maxIter);
 
     // Free used memory 
     mc_traj_data_free(mc_trj);
