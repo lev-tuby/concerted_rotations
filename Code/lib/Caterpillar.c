@@ -184,11 +184,12 @@ void CAT_print(cat_prot *protein)
  * @brief Function build up cat_prot from dihedral angles
  *
  * Build a Caterpillar protein, assuming that the first dihedral angle passed through dihed is a phi angle.
+ * Function is bit dangerous ... using n_atom_per_res other then 5 or 6 cause silent errors ... check it maybe.
  * 
  * @param[in]        n_res          Number of residues in protein
  * @param[in]        n_atom_per_res Number of atoms in one residue
  * @param[in]       *orig           Position of first atom (so far it is N)
- * @param[in]       *dihed          Array of protein dihedral angles starting with phi
+ * @param[in]       *dihed          Array of protein dihedral angles (in radians) starting with phi
  * @param[in]       *seq            Protein sequnce in one letter code
  *
  * @return builded cat_prot
@@ -202,7 +203,7 @@ cat_prot * CAT_build_from_dihed ( int n_res, size_t n_atom_per_res, double *orig
 	double angle_NCaC;
 	for(i=0;i<n_res;i++)
 	{
-		CAT_add_peptide(p,i,dihed[2*i],dihed[2*i+1],CAT_angle_NCaC);
+		CAT_add_peptide(p,i,dihed[2*i],CAT_angle_NCaC,dihed[2*i+1]);
 	}
 	return p;
 }
@@ -989,13 +990,15 @@ void CAT_rescale( cat_prot *protein)
  * @brief Function modifie residue configuration base on dihedrals
  *
  * Function reconstruct given residue based on dihedral angles in cat_prot structure.
+ * Function does not change dihedrals in protein phi/psi have to be recalculated.
+ * Function do not check if change cause breaking of protein backbone conectivity!
  * Tested OK. LT 02.08.16
  * 
  * @param[in,out]   *p              cat_prot structure to be remodeled
  * @param[in]        I              Residue which atom positions are recalculated
- * @param[in]        phi            PHI angle of given residue
+ * @param[in]        phi            PHI angle (in radians) of given residue
  * @param[in]        alpha          Deviation of 
- * @param[in]        psi            PSI angle of given residue
+ * @param[in]        psi            PSI angle (in radians) of given residue
  *
  * @return err code
  */

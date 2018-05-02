@@ -95,7 +95,7 @@ int rototransl3D_build ( gsl_matrix * rt, const gsl_vector *quat, const gsl_vect
  *
  * @param[in,out]   *q                Calculated quaternion.
  * @param[in]       *v                Vector around which rotation is performed.
- * @param[in]        theta            Angle by which rotation being performed.
+ * @param[in]        theta            Angle (in radians) by which rotation being performed.
  *
  * @return GSL err code
  */

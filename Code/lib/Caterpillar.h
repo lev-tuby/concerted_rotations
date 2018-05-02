@@ -219,6 +219,8 @@ void CAT_rescale ( cat_prot * protein );
  * @brief Function modifie residue configuration base on dihedrals
  *
  * Function reconstruct given residue based on dihedral angles in cat_prot structure.
+ * Function does not change dihedrals in protein phi/psi have to be recalculated.
+ * Function do not check if change cause breaking of protein backbone conectivity!
  * Tested OK. LT 02.08.16
  */
 int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi );
