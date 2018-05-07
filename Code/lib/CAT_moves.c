@@ -210,9 +210,21 @@ void CATMV_pivot	(mc_move_data *pivot_data, cat_prot *p, gsl_rng *rng_r, int max
 	int verse;
 	int type;
 	int c,start;
-	c=gsl_rng_uniform_int (rng_r, 2*(max_move_size-1))+1;
-	if(c>max_move_size) { c=p->n_res-c-1+max_move_size; verse=1; }
-	else {verse=-1;}
+
+    if (2*max_move_size > p->n_res)
+    {
+        error("Pivot move can not move more residues then number of residues in protein!", __FILE__, __LINE__);
+    }
+
+    c=gsl_rng_uniform_int (rng_r, 2*(max_move_size)); // select residue index in interval [0,(2*max_move_size)-1)
+    if (c > max_move_size-1)
+    {
+        c=p->n_res-1-(c-max_move_size); // -1 since p->n_res is number of residues not number of maximal residue index
+        verse=1;
+    } else
+    {
+        verse=-1;
+    }
 	type=(gsl_rng_uniform(rng_r)>0.5);
 	angle= 0.2*M_PI*(-0.5+gsl_rng_uniform(rng_r));
 	if (verse>0) //rotate following atoms
