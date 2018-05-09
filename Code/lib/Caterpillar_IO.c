@@ -101,7 +101,7 @@ void CATIO_fastadecoder (int *Dec, char *Enc,int Seq_Length)
  * @param[in]      *writemode        Write mode.
  * @param[in]      *remark           Text to be printed in REMARKS in output PDB.
  * @param[in]      *prot             Caterpillar PDB backbone representation.
- * @param[in]       N_prot           This might be wrong ... Here it is used as number of residues in prot ... howvever it is accesible through prot.n_res ...
+ * @param[in]       N_prot           Index of protein chain in protein array of proteins.
  *
  * @return \c void
  */
