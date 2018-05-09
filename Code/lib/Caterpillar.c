@@ -196,14 +196,12 @@ void CAT_print(cat_prot *protein)
  */
 cat_prot * CAT_build_from_dihed ( int n_res, size_t n_atom_per_res, double *orig, double *dihed, char *seq)
 {
-	int i,j;
 	cat_prot *p = CAT_prot_alloc( n_res, n_atom_per_res );
-	CAT_set_residues_fasta  (p,n_res, seq);
 	CAT_set_prot_linear(p,orig,0.0);
-	double angle_NCaC;
-	for(i=0;i<n_res;i++)
+	CAT_set_residues_fasta(p,n_res, seq);
+	for(int i = 0; i < n_res; i++)
 	{
-		CAT_add_peptide(p,i,dihed[2*i],CAT_angle_NCaC,dihed[2*i+1]);
+		CAT_add_peptide(p,i,dihed[2*i],M_PI-CAT_angle_NCaC,dihed[2*i+1]);
 	}
 	return p;
 }
