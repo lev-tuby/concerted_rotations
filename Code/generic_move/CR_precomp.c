@@ -49,12 +49,53 @@ void free_cr_input_data(cr_input_data *bb){
  *
  * @return \c void
  */
-void memcpy_cr_input_data(cr_input_data *bb_a, cr_input_data *bb_b){
+void memcpy_cr_input_data(cr_input_data *bb_a, const cr_input_data *bb_b){
     gsl_vector_memcpy ( bb_a->dihed_angles, bb_b->dihed_angles);
     gsl_vector_memcpy ( bb_a->bend_angles , bb_b->bend_angles );
     gsl_vector_memcpy ( bb_a->r           , bb_b->r           );
     gsl_vector_memcpy ( bb_a->d           , bb_b->d           );
 }
+
+void print_cr_input_data(const cr_input_data *bb){
+    for(int i=0; i<7; i++){
+        printf("dihed_angles[%i] = %g\n", i, gsl_vector_get(bb->dihed_angles, i));
+    }
+    for(int i=0; i<7; i++){
+        printf("bend_angles[%i] = %g\n", i, gsl_vector_get(bb->bend_angles, i));
+    }
+    for(int i=0; i<7; i++){
+        printf("r[%i] = %g\n", i, gsl_vector_get(bb->r, i));
+    }
+    for(int i=0; i<7; i++){
+        printf("d[%i] = %g\n", i, gsl_vector_get(bb->d, i));
+    }
+}
+
+void compare_cr_input_data(const cr_input_data *bb_a, const cr_input_data *bb_b){
+    for(int i=0; i<7; i++){
+        printf("dihed_angles[%i] = %g | %g\n", i, gsl_vector_get(bb_a->dihed_angles, i), gsl_vector_get(bb_b->dihed_angles, i));
+    }
+    for(int i=0; i<7; i++){
+        printf("bend_angles[%i] = %g | %g\n", i, gsl_vector_get(bb_a->bend_angles, i), gsl_vector_get(bb_b->bend_angles, i));
+    }
+    for(int i=0; i<7; i++){
+        printf("r[%i] = %g | %g\n", i, gsl_vector_get(bb_a->r, i), gsl_vector_get(bb_b->r, i));
+    }
+    for(int i=0; i<7; i++){
+        printf("d[%i] = %g | %g\n", i, gsl_vector_get(bb_a->d, i), gsl_vector_get(bb_b->d, i));
+    }
+}
+
+int compare_bend_angles(const cr_input_data *bb_a, const cr_input_data *bb_b){
+    // return 0 if same otherwise 1
+    for(int i=0; i<7; i++){
+        if (gsl_vector_get(bb_a->bend_angles, i) != gsl_vector_get(bb_b->bend_angles, i)){
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void T7 (gsl_vector *T,const struct cr_input_data bb)
 {
     int i;

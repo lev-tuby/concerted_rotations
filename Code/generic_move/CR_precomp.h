@@ -27,7 +27,10 @@ typedef struct cr_input_data {
 
 void alloc_cr_input_data(cr_input_data *bb);
 void free_cr_input_data(cr_input_data *bb);
-void memcpy_cr_input_data(cr_input_data *bb_a, cr_input_data *bb_b);
+void memcpy_cr_input_data(cr_input_data *bb_a, const cr_input_data *bb_b);
+void print_cr_input_data(const cr_input_data *bb);
+void compare_cr_input_data(const cr_input_data *bb_a, const cr_input_data *bb_b);
+int compare_bend_angles(const cr_input_data *bb_a, const cr_input_data *bb_b);
 
 /**
  * @brief Internal representation of protein backbone for concerted rotation move
