@@ -366,6 +366,15 @@ void CATMV_concerted_rot(mc_move_data *ra_data, cat_prot *p, gsl_rng * rng_r, do
         free_cr_input_data(&bb_out);                                                    //free some memory
         return;
 	}
+
+    // test no concerted rotation ... should use input dihedrals to reconstruct backbone back
+    compare_cr_input_data(&bb_out, &bb_in);
+    if (compare_bend_angles(&bb_out, &bb_in))
+    {
+        printf("CR changed bend_angles!!!??\n");
+        memcpy_cr_input_data(&bb_out, &bb_in);
+        exit(1);
+    }
 	double w_ip2;
 	for(int i = 0; i < 3; i++)
 	{
