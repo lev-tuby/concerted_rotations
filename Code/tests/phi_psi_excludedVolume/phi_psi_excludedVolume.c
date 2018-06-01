@@ -69,8 +69,9 @@ typedef struct {
 
 //pezzotto per rescale...
 int prot_rescale ( cat_prot *p);
+void rebuild ( cat_prot *p);
 void print_bond_errors(FILE *stream,cat_prot *p);
-void print_joint_angles_errors(FILE *stream, cat_prot *p);
+int print_joint_angles_errors(FILE *stream, cat_prot *p);
 void print_omega_errors(FILE *stream, cat_prot *p);
 //
 
@@ -82,21 +83,24 @@ void mc_traj_data_free( mc_traj_data * mc_trj);
 double Ener_total(cat_prot *p,energy_par *ep);
 void Reset_energy(mc_traj_data *mc_trj,energy_par *ep);
 void Compute_delta_en(mc_move_data *mvdt,conf *C,energy_par *ep);
-void Compute_energy_new(mc_move_data *mvdt,mc_traj_data *mctrj,energy_par *ep);
+double Compute_energy(const cat_prot *p);
 int Metropolis( mc_traj_data *mctrj );
 
 
 void CAT_copy(cat_prot *dest, cat_prot *orig);
 void Init_MC(mc_move_data **mvdt, mc_traj_data **mc_traj, energy_par **ep, char file_conf[1024],char file_pot[1024]);
 
+#define NUM_OF_RESIDUES 20
+
 int main(int argc, char *argv[])
 {
     int
-        maxIter=10e8,
+        maxIter=10e7,
+        k=0,
         moveResult=0;
 
     double
-        sigma=0.1,
+        sigma=0.6,
         *point;
     point = (double*)calloc(2, sizeof(double));
 
@@ -104,6 +108,7 @@ int main(int argc, char *argv[])
         histogramName[1024];
 
     FILE
+        *errFile=fopen("xerr.dat","w"),
         *dihed_out=fopen("dihedrals.dat","w");
 
     energy_par
@@ -112,9 +117,48 @@ int main(int argc, char *argv[])
     mc_traj_data
         *mc_trj;
 
+//------------------------------------------
+    double
+        E,
+        *origin,
+        *dihed,
+        *shift;
+
+    origin = (double*)calloc(3, sizeof(double));
+    for(int i=0;i<3;i++){origin[i]=100.0;}
+
+    dihed = (double*)calloc(NUM_OF_RESIDUES*2, sizeof(double));
+    for(int i=0;i<NUM_OF_RESIDUES;i++){dihed[2*i]=M_PI;dihed[2*i+1]=M_PI;}
+
+    char
+        *seq;
+
+    seq = (char*)calloc(NUM_OF_RESIDUES, sizeof(char));
+    for(int i=0;i<NUM_OF_RESIDUES;i++){seq[i]='A';}
+
+    gsl_rng
+        *rng_r;
+
+    rng_r=gsl_rng_alloc(gsl_rng_taus2);
+    gsl_rng_set(rng_r,123456789);
+
+    mc_move_data
+        *mv;
+    mv = CATMV_mc_move_data_alloc(NUM_OF_RESIDUES,NUM_OF_RESIDUES);
+
+    printf("Doing dihedral sampling.\n");
+
+    cat_prot *protein = NULL;
+    protein = CAT_build_from_dihed( NUM_OF_RESIDUES, 5, origin, dihed, seq);
+
+//------------------------------------------
+
+
     histogram
-        *psi_phi = histogram_init  (-M_PI, M_PI+0.000001, 180, 0.1);
-    histogram_add_dimension(-M_PI, M_PI+0.000001, 180, psi_phi);
+        *psi_phi         = histogram_init  (-M_PI, M_PI+0.000001, 180, 0.1),
+        *psi_phi_all     = histogram_init  (-M_PI, M_PI+0.000001, 180, 0.1);
+    histogram_add_dimension(-M_PI, M_PI+0.000001, 180, psi_phi        );
+    histogram_add_dimension(-M_PI, M_PI+0.000001, 180, psi_phi_all    );
 
     mc_move_data
         *mc_mvdt;
@@ -127,10 +171,11 @@ int main(int argc, char *argv[])
         if(i>0 && i%1000==0)
         {
             fprintf(stdout,"%d --\n",i);
-            print_bond_errors(stdout,mc_trj->new.p);
-            print_joint_angles_errors(stdout,mc_trj->new.p);
-            print_omega_errors(stdout,mc_trj->new.p);
+            print_bond_errors(stdout,protein);
+            print_joint_angles_errors(stdout,protein);
+            print_omega_errors(stdout,protein);
         }
+/*
         if(i%100000)
         {
             prot_rescale(mc_trj->old.p);
@@ -140,8 +185,9 @@ int main(int argc, char *argv[])
         {
             Reset_energy(mc_trj,en_par);
         }
-
+*/
         // Histogram sampling
+/*
         if(i>1000000 && i%50==0)
         {
             for (size_t resi=1; resi < mc_trj->new.p->n_res-1; resi++)
@@ -153,30 +199,68 @@ int main(int argc, char *argv[])
             }
             fprintf(dihed_out,"\n");
         }
+*/
 
         // Print out histogram and protein in pdb
-        if(i>1000000 && i%100000==0)
+        if(i>5000 && i%10000==0)
         {
             snprintf(histogramName, sizeof(histogramName), "data_%03.12lf_time_%08i.dat", sigma, i);
             histogram_print(histogramName, "matrix2d", psi_phi);
-            CATIO_cat2pdb("prova.pdb","a","--",mc_trj->old.p,1);
+
+            snprintf(histogramName, sizeof(histogramName), "data_%03.12lf_time_%08i_all.dat", sigma, i);
+            histogram_print(histogramName, "matrix2d", psi_phi_all);
+
+            CATIO_cat2pdb("prova.pdb","a","--",protein,1);
         }
 
         // MOVES
         if(i<5000) //first 5000 steps equil just with pivot move
         {
-            CATMV_pivot(mc_mvdt,mc_trj->new.p,mc_trj->rng_r, mc_trj->new.p->n_res/2);
+            CATMV_pivot(mv, protein, rng_r, protein->n_res/2);
         } else if (gsl_rng_uniform(mc_trj->rng_r)>0.5) {
-            CATMV_pivot(mc_mvdt,mc_trj->new.p,mc_trj->rng_r, mc_trj->new.p->n_res/5);
+            CATMV_pivot(mv, protein, rng_r, protein->n_res/2);
         } else {
-            CATMV_concerted_rot(mc_mvdt,mc_trj->new.p,mc_trj->rng_r, sigma);
+            if(print_joint_angles_errors(errFile, protein)){
+                printf("Pre fail iter: %i\n", i);
+                exit(1);
+            }
+            CATMV_concerted_rot(mv, protein, rng_r, sigma);
+//            rebuild(protein);
+            if(print_joint_angles_errors(errFile, protein)){
+                printf("After fail iter: %i\n", i);
+                exit(1);
+            }
         }
 
-        Compute_energy_new(mc_mvdt,mc_trj,en_par);
-        moveResult += Metropolis(mc_trj);
+//        prot_rescale(protein);
+        rebuild(protein);
+
+        printf("E: %lf\n", Compute_energy(protein));
+        for (size_t resi=1; resi < protein->n_res-1; resi++)
+        {
+            point[0]=protein->psi[resi];
+            point[1]=protein->phi[resi];
+            histogram_add(point, psi_phi_all);
+        }
+    	if(Compute_energy(protein) == 0)
+    	{
+            for (size_t resi=1; resi < protein->n_res-1; resi++)
+            {
+                point[0]=protein->psi[resi];
+                point[1]=protein->phi[resi];
+                histogram_add(point, psi_phi);
+            }
+            CATIO_cat2pdb("ok.pdb","a","--",protein,1);
+            printf("Accepted\n----------------\n");
+    	}
+    	else
+    	{
+            printf("Rejected\n----------------\n");
+    	}
+
     } // END MAIN LOOP
 
-    printf("\n\nAcceptedMoves: %i MovesMade: %i AcceptanceProbability: %f\n\n", moveResult, maxIter, moveResult/maxIter);
+//    printf("\n\nAcceptedMoves: %i MovesMade: %i AcceptanceProbability: %f\n\n", moveResult, maxIter, moveResult/maxIter);
 
     // Free used memory 
     mc_traj_data_free(mc_trj);
@@ -191,6 +275,70 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+double Compute_energy(const cat_prot *p)
+{
+    double
+        e_SAW=0;
+
+    for(int i=0;i<p->n_res;i++) {
+		for(int j=0;j<p->n_res;j++) {
+			int d= (i>=j)? i-j:j-i;
+			if(d>=2) {
+                if(1){
+				    e_SAW += CATENR_Saw(p->CA[i],p->CA[j], CATENR_SAW_CA_CA);
+				    e_SAW += CATENR_Saw(p->CA[j],p->CA[i], CATENR_SAW_CA_CA);
+				    if(e_SAW>0) {
+//					    printf("A1 CA SAW clash at i=%d j=%d\n",i,j);
+					    return e_SAW; 
+				    }
+                }
+                if(0){
+                    e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
+                    e_SAW += CATENR_Saw(p->H[i], p->O[j], CATENR_SAW_O_H);
+                    if(e_SAW>0) {
+//                        printf("A2 O - H SAW clash at i=%d j=%d\n",i,j);
+                        return e_SAW; 
+                    }
+                }
+			} else if (i!=j) {
+                if(0){
+				    e_SAW += CATENR_Saw(p->O[i], p->O[j], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
+				    e_SAW += CATENR_Saw(p->O[j], p->O[i], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
+				    if(e_SAW>0) {
+//					    printf("A3 O - O SAW clash at i=%d j=%d\n",i,j);
+					    return e_SAW; 
+				    }
+                }
+                if(1){
+				    e_SAW += CATENR_Saw(p->H[i], p->H[j], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
+				    e_SAW += CATENR_Saw(p->H[j], p->H[i], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
+				    if(e_SAW>0) {
+//					    printf("A4 H - H SAW clash at i=%d j=%d\n",i,j);
+					    return e_SAW; 
+				    }
+                }
+                if(0){
+				    e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
+				    e_SAW += CATENR_Saw(p->H[i], p->O[j], CATENR_SAW_O_H);
+				    if(e_SAW>0) {
+//					    printf("A5 O - H SAW clash at i=%d j=%d\n",i,j);
+					    return e_SAW; 
+				    }
+                }
+			} else if (i==j && p->CB!= NULL) {
+                if(0){
+				    e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
+				    e_SAW += CATENR_Saw(p->O[j], p->H[i], CATENR_SAW_O_H);
+				    if(e_SAW>0) {
+//					    printf("A6 O - H SAW clash at i=%d j=%d\n",i,j);
+					    return e_SAW; 
+				    }
+                }
+			}
+		}
+	}
+    return e_SAW;
+}
 
 double Ener_total(cat_prot *p,energy_par *ep)
 {
@@ -462,7 +610,8 @@ void Compute_energy_new(mc_move_data *mvdt,mc_traj_data *mctrj,energy_par *ep)
 int Metropolis( mc_traj_data *mctrj )
 {
 	mctrj->step+=1;
-	double DE=mctrj->old.E-mctrj->new.E;
+//	double DE=mctrj->old.E-mctrj->new.E;
+	double DE=Compute_energy(mctrj->old.p)-Compute_energy(mctrj->new.p);
 	double LR=log(gsl_rng_uniform(mctrj->rng_r));
 	//fprintf(stderr,"--Metro: DE = %lf LR = %lf\n",DE,LR);
 	if(mctrj->beta*DE>LR)
@@ -528,6 +677,15 @@ int prot_rescale ( cat_prot *p)
 	return error;
 }
 
+void rebuild(cat_prot *p)
+{
+	for(int i = 0; i < p->n_res; i++)
+	{
+		CAT_add_peptide(p, i, p->phi[i],M_PI-CAT_angle_NCaC,p->psi[i]);
+	}
+	return;
+}
+
 void print_bond_errors(FILE *stream,cat_prot *p)
 {
 	double NCa_bond[3];
@@ -553,18 +711,23 @@ void print_bond_errors(FILE *stream,cat_prot *p)
 	fflush(stream);
 }
 
-void print_joint_angles_errors(FILE *stream, cat_prot *p)
+int print_joint_angles_errors(FILE *stream, cat_prot *p)
 {
-	double angle_CaCN, angle_CNCa;
+	double angle_CaCN, angle_CNCa, angle_NCaC;
+    int out=0;
 	fprintf(stream,"joint angles:\n");
 	for(int i=1;i<p->n_res;i++) {
 		angle_CNCa=angle_ABC(p->C[i-1],p->N[i],p->CA[i]);
 		angle_CaCN=angle_ABC(p->CA[i-1],p->C[i-1],p->N[i]);
-        if (fabs(angle_CNCa-CAT_angle_CNCa) > 10e-9 || fabs(angle_CaCN-CAT_angle_CaCN) > 10e-9)
-		    fprintf(stream,"%d CNCa: %g CaCN: %g \t", i,fabs(angle_CNCa-CAT_angle_CNCa), fabs(angle_CaCN-CAT_angle_CaCN));
+        angle_NCaC=angle_ABC(p->N[i], p->CA[i], p->C[i]);
+        if (fabs(angle_CNCa-CAT_angle_CNCa) > 10e-9 || fabs(angle_CaCN-CAT_angle_CaCN) > 10e-9 || fabs(angle_NCaC-CAT_angle_NCaC) > 10e-9){
+		    fprintf(stream,"%d CNCa: %g CaCN: %g NCaC: %g\t", i,fabs(angle_CNCa-CAT_angle_CNCa), fabs(angle_CaCN-CAT_angle_CaCN), fabs(angle_NCaC-CAT_angle_NCaC));
+            out=1;
+        }
 	}
 	fprintf(stream,"\n");
 	fflush(stream);
+    return out;
 }
 void print_omega_errors(FILE *stream, cat_prot *p)
 {

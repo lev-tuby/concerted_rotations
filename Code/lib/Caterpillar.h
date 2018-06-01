@@ -171,6 +171,10 @@ cat_prot * CAT_prot_alloc (size_t n_res, size_t n_atom_per_res);
  */
 void CAT_prot_free (cat_prot * pr);
 
+
+void CAT_move(cat_prot *p, const double *vec);
+
+
 /**
  * @brief Function print in stdout position of all atoms in protein
  */

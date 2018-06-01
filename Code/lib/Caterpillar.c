@@ -155,6 +155,38 @@ void CAT_prot_free ( cat_prot * p)
 	}
 }
 
+void CAT_move(cat_prot *p, const double *vec){
+    for(int i=0; i<p->n_res;i++)
+    {
+        p->N[i][0]+=vec[0];
+        p->N[i][1]+=vec[1];
+        p->N[i][2]+=vec[2];
+
+        p->CA[i][0]+=vec[0];
+        p->CA[i][1]+=vec[1];
+        p->CA[i][2]+=vec[2];
+
+        p->C[i][0]+=vec[0];
+        p->C[i][1]+=vec[1];
+        p->C[i][2]+=vec[2];
+
+        p->O[i][0]+=vec[0];
+        p->O[i][1]+=vec[1];
+        p->O[i][2]+=vec[2];
+
+        p->H[i][0]+=vec[0];
+        p->H[i][1]+=vec[1];
+        p->H[i][2]+=vec[2];
+
+        if(p->n_atom_per_res == 6)
+        {
+            p->CB[i][0]+=vec[0];
+            p->CB[i][1]+=vec[1];
+            p->CB[i][2]+=vec[2];
+        }
+    }
+}
+
 /**
  * @brief Function print in stdout position of all atoms in protein
  *
@@ -167,7 +199,7 @@ void CAT_print(cat_prot *protein)
 {
     for(int i=0; i<protein->n_res;i++)
     {
-        printf("Resi: %i\n", i);
+        printf("Resi: %i | psi: %g phi: %g\n", i, protein->psi[i], protein->phi[i]);
         printf("N:  %g %g %g\n", protein->N[i][0], protein->N[i][1], protein->N[i][2]);
         printf("CA: %g %g %g\n", protein->CA[i][0], protein->CA[i][1], protein->CA[i][2]);
         printf("C:  %g %g %g\n", protein->C[i][0], protein->C[i][1], protein->C[i][2]);
@@ -1343,6 +1375,59 @@ double calc_dihedralf_angle(double *atom_1, double *atom_2, double *atom_3, doub
 	//if( scalar(aXb, c) < 0.0 ) *phi = (2.0*M_PI) - *phi;
 	return (dihedral);
 }
+
+double calc_dihedralf_angleX(double *atom_1, double *atom_2, double *atom_3, double *atom_4)
+{
+    double
+        dih  = -1.0,
+        * b1 = d1t(3),
+        * b2 = d1t(3),
+        * b3 = d1t(3),
+
+        * n1 = d1t(3),
+        * n2 = d1t(3),
+
+        * m  = d1t(3);
+
+
+    b1[0] = atom_2[0]-atom_1[0];
+    b1[1] = atom_2[1]-atom_1[1];
+    b1[2] = atom_2[2]-atom_1[2];
+    normalize_d(b1, 3);
+
+    b2[0] = atom_3[0]-atom_2[0];
+    b2[1] = atom_3[1]-atom_2[1];
+    b2[2] = atom_3[2]-atom_2[2];
+    normalize_d(b2, 3);
+
+    b3[0] = atom_4[0]-atom_3[0];
+    b3[1] = atom_4[1]-atom_3[1];
+    b3[2] = atom_4[2]-atom_3[2];
+    normalize_d(b3, 3);
+
+    // n1 = b1 x b2
+    vecprod_d (b1, b2, n1);
+    normalize_d(n1, 3);
+
+    // n2 = b2 x b3
+    vecprod_d (b2, b3, n2);
+    normalize_d(n2, 3);
+
+    // m = n1 x b2
+    vecprod_d (n1, b2, m);
+    normalize_d(m, 3);
+    dih = atan2(scal_d(n1, n2, 3), scal_d(m, n2, 3));
+
+    free_d1t(b1);
+    free_d1t(b2);
+    free_d1t(b3);
+    free_d1t(n1);
+    free_d1t(n2);
+    free_d1t(m);
+
+    return dih;
+}
+
 
 /**
  * @brief Don not know ... Luca?
