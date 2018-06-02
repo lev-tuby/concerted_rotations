@@ -544,14 +544,14 @@ void CAT_rescale( cat_prot *p)
 	p->H[0][2]=p->N[0][2] + CAT_Rbond_NH/r*(p->H[0][2]-p->N[0][2]);
 
 	//MAH
-	p->phi[0]=calc_dihedralf_angle(p->H[0],p->N[0],p->CA[0],p->C[0])-M_PI;
-	p->psi[0]=calc_dihedralf_angle(p->N[0],p->CA[0],p->C[0],p->N[1]);
+	p->phi[0]=dihedralangle_ABCD(p->H[0],p->N[0],p->CA[0],p->C[0])-M_PI;
+	p->psi[0]=dihedralangle_ABCD(p->N[0],p->CA[0],p->C[0],p->N[1]);
 	for(i=1;i<p->n_res-1;i++)
 	{
-		p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
-		p->psi[i]=calc_dihedralf_angle(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
+		p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+		p->psi[i]=dihedralangle_ABCD(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
 	}
-	p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+	p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
 	//FINE AGGIORNAMENTO DIEDRI
 	double angle_NCaC[p->n_res];
 	for(i=0;i<p->n_res-1;i++){
@@ -564,13 +564,13 @@ void CAT_rescale( cat_prot *p)
 	for(i=1;i<p->n_res;i++){
 		CAT_add_peptide(p,i,p->phi[i],p->psi[i],angle_NCaC[i]);
 	}
-	p->psi[0]=calc_dihedralf_angle(p->N[0],p->CA[0],p->C[0],p->N[1]);
+	p->psi[0]=dihedralangle_ABCD(p->N[0],p->CA[0],p->C[0],p->N[1]);
 	for(i=1;i<p->n_res-1;i++)
 	{
-		p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
-		p->psi[i]=calc_dihedralf_angle(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
+		p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+		p->psi[i]=dihedralangle_ABCD(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
 	}
-	p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+	p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
 	for(i=0;i<p->n_res;i++)
 	{
 		fprintf(stderr,"%7.5f %7.5f\t",p->phi[i],p->psi[i]);
@@ -1160,11 +1160,11 @@ void CAT_prot_dihedrals (cat_prot *protein)
 	{
 		if(i>0)
 		{
-			protein->phi[i]=calc_dihedralf_angle(protein->C[i-1],protein->N[i],protein->CA[i],protein->C[i]);
+			protein->phi[i]=dihedralangle_ABCD(protein->C[i-1],protein->N[i],protein->CA[i],protein->C[i]);
 		}
 		if(i<protein->n_res-1)
 		{
-			protein->psi[i]=calc_dihedralf_angle(protein->N[i],protein->CA[i],protein->C[i],protein->N[i+1]);
+			protein->psi[i]=dihedralangle_ABCD(protein->N[i],protein->CA[i],protein->C[i],protein->N[i+1]);
 		}
 	}
 }
@@ -1304,76 +1304,6 @@ void compute_dihedrals(cat_prot *p)
 		sn=norm_d(w_3,3)*GSL_SIGN(scal_d(w_3,axis,3));
 		p->psi[c]=atan2(sn,cs);
 	}
-}
-
-/**
- * @brief Function calculate dihedral from 4 atoms
- *
- * This function was taken from LAMMPS.
- *
- * @param[in]      *atom_1        Coordinates of atom1 in 3D
- * @param[in]      *atom_2        Coordinates of atom2 in 3D
- * @param[in]      *atom_3        Coordinates of atom3 in 3D
- * @param[in]      *atom_4        Coordinates of atom4 in 3D
- *
- * @return dihedral angle between atoms
- */
-double calc_dihedralf_angle(double *atom_1, double *atom_2, double *atom_3, double *atom_4)
-{
-	double vb1x=0,vb1y=0,vb1z=0,vb2xm=0,vb2ym=0,vb2zm=0,vb3x=0,vb3y=0,vb3z=0;
-	double ax=0,ay=0,az=0,bx=0,by=0,bz=0,rasq=0,rbsq=0,rab;
-	double c=0,s=0;
-	double rgsq,rg;
-	double dihedral=0;
-	char err_msg[1024];
-	//double sinphi=0,rgsq=0;
-	// 1st bond
-	vb1x=atom_1[0]-atom_2[0];
-	vb1y=atom_1[1]-atom_2[1];
-	vb1z=atom_1[2]-atom_2[2];
-	// 2nd bond (opposite direction -- axis)
-	vb2xm=atom_2[0]-atom_3[0];
-	vb2ym=atom_2[1]-atom_3[1];
-	vb2zm=atom_2[2]-atom_3[2];
-	// 3rd bond
-	vb3x=atom_4[0]-atom_3[0];
-	vb3y=atom_4[1]-atom_3[1];
-	vb3z=atom_4[2]-atom_3[2];
-	// c,s calculation
-	ax = vb1y*vb2zm - vb1z*vb2ym;
-	ay = vb1z*vb2xm - vb1x*vb2zm;
-	az = vb1x*vb2ym - vb1y*vb2xm;
-
-	bx = vb3y*vb2zm - vb3z*vb2ym;
-	by = vb3z*vb2xm - vb3x*vb2zm;
-	bz = vb3x*vb2ym - vb3y*vb2xm;
-
-	rasq = ax*ax + ay*ay + az*az;
-	rbsq = bx*bx + by*by + bz*bz;
-	rgsq = vb2xm*vb2xm + vb2ym*vb2ym + vb2zm*vb2zm;
-	rg = sqrt(rgsq);
-
-	//ra2inv = 1.0/rasq;
-	//rb2inv = 1.0/rbsq;
-	//rabinv = sqrt(ra2inv*rb2inv);
-	rab=sqrt(rasq*rbsq);
-
-	c= (ax*bx + ay*by + az*bz)/rab;
-	s= rg*(ax*vb3x + ay*vb3y + az*vb3z)/rab;
-
-
-	//if(c < -1) c=-0.999999999999;
-	//if(c > 1) c=0.9999999999999; // The DBL_EPSILON is there to make sure that the cosphi is always a bit smaller than one otherwise acos returns a NaN
-	dihedral=atan2(s,c);
-	if(isnan(dihedral))
-	{
-		sprintf(err_msg,"%s:%d  cosphi=%g sinphi=%g\n",__FILE__,__LINE__,c,s);
-        printf("DEBUG: d0 %g %g %g | %g %g %g | %g %g %g | %g %g %g\n", atom_1[0], atom_1[1], atom_1[2], atom_2[0], atom_2[1], atom_2[2], atom_3[0], atom_3[1], atom_3[2],atom_4[0], atom_4[1], atom_4[2]);
-		failed(err_msg);
-	}
-	// Calculate dihedral angle
-	//if( scalar(aXb, c) < 0.0 ) *phi = (2.0*M_PI) - *phi;
-	return (dihedral);
 }
 
 double calc_dihedralf_angleX(double *atom_1, double *atom_2, double *atom_3, double *atom_4)

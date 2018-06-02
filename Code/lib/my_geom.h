@@ -105,6 +105,13 @@ double find_radius(int N,double ** coord,double center[3]);
 /**
  * @brief Function calculate angle \f$\angle ABC\f$ between points *A, *B, and *C
  */
-double angle_ABC(double *A,double *B, double *C);
+double angle_ABC(const double *A, const double *B, const double *C);
+
+/**
+ * @brief Function calculate dihedral from 4 atoms
+ *
+ * This function was taken from LAMMPS.
+ */
+double dihedralangle_ABCD(const double *atom_1, const double *atom_2, const double *atom_3, const double *atom_4);
 
 #endif //__HDR_GEOM__

@@ -103,7 +103,7 @@
 */
 #define CAT_Rbond_CO  1.2300000
 
-/** @brief C-N bond length
+/** @brief C=N bond length
  * sist->Rbond[3]= 1.33000
 */
 #define CAT_Rbond_CN  1.3300000
@@ -257,13 +257,6 @@ double compute_psi(cat_prot *p,int c);
  * @return \c void
  */
 void compute_dihedrals(cat_prot *p);
-
-/**
- * @brief Function calculate dihedral from 4 atoms
- *
- * This function was taken from LAMMPS.
- */
-double calc_dihedralf_angle(double *atom_1, double *atom_2, double *atom_3, double *atom_4);
 
 /**
  * @brief Don not know ... Luca?

@@ -155,13 +155,13 @@ void CATMV_cranck (mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
 		CAT_insert_cbeta(p,c,CAT_Cb_AZIMUTH,CAT_Rbond_CCb);
 	}
 	//compute the initial and final dihedrals too
-	p->psi[c]=calc_dihedralf_angle(p->N[c],p->CA[c],p->C[c],p->N[c+1]);
+	p->psi[c]=dihedralangle_ABCD(p->N[c],p->CA[c],p->C[c],p->N[c+1]);
 	if(c>0) {
-		p->phi[c]=calc_dihedralf_angle(p->C[c-1],p->N[c],p->CA[c],p->C[c]);
+		p->phi[c]=dihedralangle_ABCD(p->C[c-1],p->N[c],p->CA[c],p->C[c]);
 	}
-	p->phi[end]=calc_dihedralf_angle(p->C[end-1],p->N[end],p->CA[end],p->C[end]);
+	p->phi[end]=dihedralangle_ABCD(p->C[end-1],p->N[end],p->CA[end],p->C[end]);
 	if(end<p->n_res-1) {
-		p->psi[end]=calc_dihedralf_angle(p->N[end],p->CA[end],p->C[end],p->N[end+1]);
+		p->psi[end]=dihedralangle_ABCD(p->N[end],p->CA[end],p->C[end],p->N[end+1]);
 	}
 	cranck_data->N_moved=length+1;
 	//Save data on moved particles
@@ -402,11 +402,11 @@ void CATMV_concerted_rot(mc_move_data *ra_data, cat_prot *p, gsl_rng * rng_r, do
     {
 		if(i>0)
 		{
-			p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+			p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
 		}
 		if(i<p->n_res-1)
 		{
-			p->psi[i]=calc_dihedralf_angle(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
+			p->psi[i]=dihedralangle_ABCD(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
 		}
 	}
 
