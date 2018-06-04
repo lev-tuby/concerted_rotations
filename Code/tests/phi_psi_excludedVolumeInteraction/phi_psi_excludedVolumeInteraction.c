@@ -515,9 +515,9 @@ int prot_rescale ( cat_prot *p)
 			p->N[0][i]+=b2[i]*(CAT_Rbond_CaN/r-1.0);
 		}
 	}
-	p->phi[0]=calc_dihedralf_angle(p->H[0],p->N[0],p->CA[0],p->C[0])-M_PI;
+	p->phi[0]=dihedralangle_ABCD(p->H[0],p->N[0],p->CA[0],p->C[0])-M_PI;
 	int n=p->n_res-1;
-	p->psi[n]=calc_dihedralf_angle(p->N[n],p->CA[n],p->C[n],p->O[n])-M_PI;
+	p->psi[n]=dihedralangle_ABCD(p->N[n],p->CA[n],p->C[n],p->O[n])-M_PI;
 	for(int i=0;i<p->n_res;i++){
 		for(int j=0;j<3;j++){
 			b1[j]=p->N[i][j]-p->CA[i][j];
@@ -581,7 +581,7 @@ void print_omega_errors(FILE *stream, cat_prot *p)
 	double omega;
 	fprintf(stream,"omega:\n");
 	for(int i=1;i<p->n_res;i++) {
-		omega=calc_dihedralf_angle(p->CA[i-1],p->C[i-1],p->N[i],p->CA[i]);
+		omega=dihedralangle_ABCD(p->CA[i-1],p->C[i-1],p->N[i],p->CA[i]);
 		omega=gsl_sf_angle_restrict_pos (omega);
         if (fabs(omega-M_PI) > 10e-9)
 		    fprintf(stream,"%g \n", fabs(omega-M_PI));
