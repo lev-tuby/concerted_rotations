@@ -1,0 +1,7 @@
+<map id="Code/lib/CAT_moves.h" name="Code/lib/CAT_moves.h">
+<area shape="rect" id="node2" href="$concerted__rot_8c.html" title="Main implementation of concerted rotation move This program is suppose to simulate peptide backbone i..." alt="" coords="5,95,152,121"/>
+<area shape="rect" id="node3" href="$CAT__moves_8c.html" title="Function for manipulation with #CAT_prot strcuture. " alt="" coords="177,95,335,121"/>
+<area shape="rect" id="node4" href="$test__CR__speed_8c.html" title="Program used to evaluate speed of concerted rotation move. " alt="" coords="360,87,512,129"/>
+<area shape="rect" id="node5" href="$phi__psi__excludedVolume_8c.html" title="Program used to evalueat efficiency of concerted rotation in constrained space of peptide backbone..." alt="" coords="536,80,696,136"/>
+<area shape="rect" id="node6" href="$phi__psi__flat__histo_8c.html" title="Program used to evaluate sampling efficiency of concerted rotation as function of sigma..." alt="" coords="720,80,851,136"/>
+</map>

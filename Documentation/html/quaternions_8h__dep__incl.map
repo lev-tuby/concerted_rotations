@@ -1,0 +1,8 @@
+<map id="Code/lib/quaternions.h" name="Code/lib/quaternions.h">
+<area shape="rect" id="node2" href="$concerted__rot_8c.html" title="Main implementation of concerted rotation move This program is suppose to simulate peptide backbone i..." alt="" coords="5,95,152,121"/>
+<area shape="rect" id="node3" href="$Caterpillar_8c.html" title="Interface for the Caterpillar protein model. Function&#39;s definitions. " alt="" coords="176,95,320,121"/>
+<area shape="rect" id="node4" href="$lib_2quaternions_8c.html" title="Source file contain function for manipulation with quaternions and rotations Added 20180201 – rototr..." alt="" coords="344,95,496,121"/>
+<area shape="rect" id="node5" href="$test__CR__speed_8c.html" title="Program used to evaluate speed of concerted rotation move. " alt="" coords="520,87,672,129"/>
+<area shape="rect" id="node6" href="$phi__psi__excludedVolume_8c.html" title="Program used to evalueat efficiency of concerted rotation in constrained space of peptide backbone..." alt="" coords="696,80,856,136"/>
+<area shape="rect" id="node7" href="$phi__psi__flat__histo_8c.html" title="Program used to evaluate sampling efficiency of concerted rotation as function of sigma..." alt="" coords="880,80,1011,136"/>
+</map>

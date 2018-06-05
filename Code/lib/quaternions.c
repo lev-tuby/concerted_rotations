@@ -1,8 +1,22 @@
-//Added 20180201 -- rototranslations
+/**
+ * @file
+ * @brief Source file contain function for manipulation with quaternions and rotations
+ * Added 20180201 -- rototranslations
+ */
+
 #include "quaternions.h"
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
 #include <math.h>
+
+/**
+ * @brief Function calculate rotation matrix in 3D from quaternion
+ *
+ * @param[in,out]   *rot              Minimal value of histogram in 1D histogram.
+ * @param[in]       *quat             Quaternion vector.
+ *
+ * @return GSL err code
+ */
 int rotation3D_build 		( gsl_matrix * rot, const gsl_vector *quat)
 {
 	double r[3][3];
@@ -35,13 +49,22 @@ int rotation3D_build 		( gsl_matrix * rot, const gsl_vector *quat)
 	}
 	return GSL_SUCCESS;
 }
+
+/**
+ * @brief Function calculate rotation-translation matrix in 3D from quaternion and translation vector
+ *
+ * builds  a matrix
+ *   /  Rot tr \
+ *   \  0   1  /
+ *
+ * @param[in,out]   *rt               Minimal value of histogram in 1D histogram.
+ * @param[in]       *quat             Quaternion vector.
+ * @param[in]       *transl           Translation vector.
+ *
+ * @return GSL err code
+ */
 int rototransl3D_build ( gsl_matrix * rt, const gsl_vector *quat, const gsl_vector * transl)
 {
-	/*
-	* builds  a matrix
-	*   /  Rot tr \
-	*   \  0 	1	 /
-	*/
 	double rot[3][3];
 	double q0,q1,q2,q3;
 	double t[4];
@@ -67,6 +90,15 @@ int rototransl3D_build ( gsl_matrix * rt, const gsl_vector *quat, const gsl_vect
 	return GSL_SUCCESS;
 }
 
+/**
+ * @brief Function calculate quaternion for rotation in 3D
+ *
+ * @param[in,out]   *q                Calculated quaternion.
+ * @param[in]       *v                Vector around which rotation is performed.
+ * @param[in]        theta            Angle by which rotation being performed.
+ *
+ * @return GSL err code
+ */
 int quaternion_build (gsl_vector * q, const gsl_vector *v, const double theta )
 {
 	// q = (cos(theta/2), \vec{v}*sin(theta/2)
@@ -85,9 +117,19 @@ int quaternion_build (gsl_vector * q, const gsl_vector *v, const double theta )
 	return GSL_SUCCESS;
 }
 
+/**
+ * @brief Function calculate multiplication of rotation-translation matrix
+ *
+ * Multiply two rototranslations rt1 and rt2 giving rt2(rt1(.))
+ *
+ * @param[in,out]   *rt21             Result of matrix multiplication.
+ * @param[in]       *rt2              First rotationaly-translational matrix.
+ * @param[in]       *rt1              Second rotationaly-translational matrix.
+ *
+ * @return GSL err code
+ */
 int rototrans3D_mult ( gsl_matrix *rt21, const gsl_matrix *rt2, const gsl_matrix *rt1)
 {
-	//multiply two rototranslations rt1 and rt2 giving rt2(rt1(.))
 	if(rt1->size1 !=4 || rt1->size2 !=4 ) {
 		return GSL_EBADLEN;
 	}
@@ -102,9 +144,19 @@ int rototrans3D_mult ( gsl_matrix *rt21, const gsl_matrix *rt2, const gsl_matrix
 	return error;
 }
 
+/**
+ * @brief Function calculate multiplication of two quaternions
+ *
+ * Returns the multiplied quaternion q21=q2*q1.
+ *
+ * @param[in,out]   *q21              Result of matrix multiplication.
+ * @param[in]       *q2               First quaternion in 3D.
+ * @param[in]       *q1               Second quaternion in 3D.
+ *
+ * @return GSL err code
+ */
 int quaternion_mult ( gsl_vector *q21, const gsl_vector *q2, const gsl_vector *q1)
 {
-	//returns the multiplied quaternion q21=q2*q1
 	if(q1->size!=4 || q2->size !=4 || q21->size !=4) {
 		return GSL_EBADLEN;
 	}
@@ -193,6 +245,15 @@ int quaternion_mult ( gsl_vector *q21, const gsl_vector *q2, const gsl_vector *q
 }
 */
 
+/**
+ * @brief Function rotate vector via rotation matrix
+ *
+ * @param[in,out]   *rV               3D vector rotated by rotation matrix.
+ * @param[in]       *r                Rotation matrix in 3D.
+ * @param[in]       *V                3D vector to be rotated.
+ *
+ * @return GSL err code
+ */
 int rotate3D_vector_m			( gsl_vector *rV, const gsl_matrix *r, const gsl_vector *V)
 {
 	if (r->size1!=3 || r->size2!=3 || V->size!=3 || rV->size !=3 ) {
@@ -202,6 +263,15 @@ int rotate3D_vector_m			( gsl_vector *rV, const gsl_matrix *r, const gsl_vector 
 	return error;
 }
 
+/**
+ * @brief Function rotate and translate vector via rotation-translation matrix
+ *
+ * @param[in,out]   *rtV              3D vector rotated and translated by rotation-translation matrix.
+ * @param[in]       *rt               Rotation-translation matrix in 3D.
+ * @param[in]       *V                3D vector to be rotated and translated.
+ *
+ * @return GSL err code
+ */
 int rototranslate3D_vector_m (gsl_vector *rtV, const gsl_matrix *rt, const gsl_vector *V)
 {
 	if (rt->size1!=4 || rt->size2!=4 || V->size!=3 || rtV->size !=3 ) {
@@ -221,3 +291,4 @@ int rototranslate3D_vector_m (gsl_vector *rtV, const gsl_matrix *rt, const gsl_v
 	gsl_vector_set(rtV,2,tmp_rtV[2]);
 	return error;
 }
+

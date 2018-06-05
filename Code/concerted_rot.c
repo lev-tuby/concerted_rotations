@@ -1,18 +1,25 @@
+/**
+ * @file
+ * @brief Main implementation of concerted rotation move 
+ * This program is suppose to simulate peptide backbone in Caterpillar model.
+ */
+
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_sf.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <gsl/gsl_math.h>
 
 
 #include "./lib/Caterpillar_energies.h"
 #include "./lib/my_memory.h"
 #include "./lib/my_geom.h"
-#include "./lib/geom_prop.h"
 #include "./lib/Caterpillar_IO.h"
 #include "./lib/CAT_moves.h"
 #include "./lib/quaternions.h"
 #include "./lib/histogram.h"
+#include "./lib/messages.h"
 
 #define ACC 1
 #define REJ 0
@@ -60,6 +67,10 @@ int acceptMove(mc_traj_data *mctrj);
 void CAT_copy(cat_prot *dest, cat_prot *orig);
 void Init_MC(mc_move_data **mvdt, mc_traj_data **mc_traj, char file_conf[1024],char file_pot[1024]);
 
+    int global_warn=0;
+    int global_max_warn=0;
+
+
 int main(int argc, char *argv[])
 {
     int
@@ -81,7 +92,7 @@ int main(int argc, char *argv[])
 
     histogram
         *psi_phi = histogram_init  (-M_PI, M_PI+0.000001, 180, 0.1);
-    histogram_add_dimension(-M_PI, M_PI, 180+0.000001, psi_phi);
+    histogram_add_dimension(-M_PI, M_PI+0.000001, 180, psi_phi);
 
     mc_move_data
         *mc_mvdt;
@@ -144,6 +155,8 @@ int main(int argc, char *argv[])
     mc_traj_data_free(mc_trj);
     CATMV_mc_move_data_free(mc_mvdt);
     histogram_free(psi_phi);
+    free(point);
+    fclose(dihed_out);
     return 0;
 }
 
@@ -171,6 +184,10 @@ void mc_traj_data_free( mc_traj_data * mctrj)
 	if(mctrj!=NULL)
 	{
 		gsl_rng_free(mctrj->rng_r);
+        CAT_prot_free(mctrj->old.p);
+        free(mctrj->old.Dcontacts);
+        CAT_prot_free(mctrj->new.p);
+        free(mctrj->new.Dcontacts);
 		free(mctrj);
 	}
 }

@@ -1,18 +1,22 @@
+/**
+ * @file
+ * @brief Program used to evalueat efficiency of concerted rotation in constrained space of peptide backbone
+ */
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_sf.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <gsl/gsl_math.h>
 
 #include "../../lib/Caterpillar_energies.h"
 #include "../../lib/my_memory.h"
 #include "../../lib/my_geom.h"
-#include "../../lib/geom_prop.h"
 #include "../../lib/Caterpillar_IO.h"
 #include "../../lib/CAT_moves.h"
 #include "../../lib/quaternions.h"
 #include "../../lib/histogram.h"
+#include "../../lib/messages.h"
 
 #define ACC 1
 #define REJ 0
@@ -88,7 +92,8 @@ void Init_MC(mc_move_data **mvdt, mc_traj_data **mc_traj, energy_par **ep, char 
 int main(int argc, char *argv[])
 {
     int
-        maxIter=10e8;
+        maxIter=10e8,
+        moveResult=0;
 
     double
         sigma=0.1,
@@ -109,7 +114,7 @@ int main(int argc, char *argv[])
 
     histogram
         *psi_phi = histogram_init  (-M_PI, M_PI+0.000001, 180, 0.1);
-    histogram_add_dimension(-M_PI, M_PI, 180+0.000001, psi_phi);
+    histogram_add_dimension(-M_PI, M_PI+0.000001, 180, psi_phi);
 
     mc_move_data
         *mc_mvdt;
@@ -168,8 +173,10 @@ int main(int argc, char *argv[])
         }
 
         Compute_energy_new(mc_mvdt,mc_trj,en_par);
-        Metropolis(mc_trj);
+        moveResult += Metropolis(mc_trj);
     } // END MAIN LOOP
+
+    printf("\n\nAcceptedMoves: %i MovesMade: %i AcceptanceProbability: %f\n\n", moveResult, maxIter, moveResult/maxIter);
 
     // Free used memory 
     mc_traj_data_free(mc_trj);
@@ -179,6 +186,8 @@ int main(int argc, char *argv[])
     free(en_par->M);
     free(en_par);
     histogram_free(psi_phi);
+    free(point);
+    fclose(dihed_out);
     return 0;
 }
 
@@ -194,21 +203,21 @@ double Ener_total(cat_prot *p,energy_par *ep)
 		for(int j=0;j<p->n_res;j++) {
 			int d= (i>=j)? i-j:j-i;
 			if(d>2) {
-				e_SAW += CATENR_Saw_g(p->CA[i],p->CA[j], CATENR_SAW_CA_CA);
-				e_SAW += CATENR_Saw_g(p->O[i], p->H[j], CATENR_SAW_O_H);
-				e_SAW += CATENR_Saw_g(p->H[i], p->O[j], CATENR_SAW_O_H);
+				e_SAW += CATENR_Saw(p->CA[i],p->CA[j], CATENR_SAW_CA_CA);
+				e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
+				e_SAW += CATENR_Saw(p->H[i], p->O[j], CATENR_SAW_O_H);
 				if(e_SAW>0) {
 					printf("AHHH CA SAW clash at i=%d j=%d\n",i,j);
 					return e_SAW; 
 				}
 			} else if (i!=j) {
-				e_SAW += CATENR_Saw_g(p->O[i], p->O[j], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
-				e_SAW += CATENR_Saw_g(p->H[i], p->H[j], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
+				e_SAW += CATENR_Saw(p->O[i], p->O[j], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
+				e_SAW += CATENR_Saw(p->H[i], p->H[j], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
 
-				e_SAW += CATENR_Saw_g(p->O[i], p->H[j], CATENR_SAW_O_H);
-				e_SAW += CATENR_Saw_g(p->H[i], p->O[j], CATENR_SAW_O_H);
+				e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
+				e_SAW += CATENR_Saw(p->H[i], p->O[j], CATENR_SAW_O_H);
 			} else if (i==j && p->CB!= NULL) {
-				e_SAW += CATENR_Saw_g(p->O[i], p->H[j], CATENR_SAW_O_H);
+				e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
 			}
 			if(e_SAW>0) {
 				printf("AHHH OTHER SAW clash at i=%d j=%d\n",i,j);
@@ -243,6 +252,10 @@ void mc_traj_data_free( mc_traj_data * mctrj)
 	if(mctrj!=NULL)
 	{
 		gsl_rng_free(mctrj->rng_r);
+        CAT_prot_free(mctrj->old.p);
+        free(mctrj->old.Dcontacts);
+        CAT_prot_free(mctrj->new.p);
+        free(mctrj->new.Dcontacts);
 		free(mctrj);
 	}
 }
@@ -387,10 +400,9 @@ void Compute_delta_en(mc_move_data *mvdt,conf *C, energy_par *ep)
 		int d=r1>=r2? r1-r2:r2-r1;
 		if(d>2) {
 			r =dist_d(p->CA[r1],p->CA[r2],3);
-			//			e_SAW  = CATENR_Saw_eq(r);
-			e_SAW  = CATENR_Saw_eq_g (r, CATENR_SAW_CA_CA);
-			e_SAW += CATENR_Saw_g		 (p->O[r1], p->H[r2], CATENR_SAW_O_H);
-			e_SAW += CATENR_Saw_g		 (p->H[r1], p->O[r2], CATENR_SAW_O_H);
+			e_SAW  = CATENR_Saw_eq (r, CATENR_SAW_CA_CA);
+			e_SAW += CATENR_Saw		 (p->O[r1], p->H[r2], CATENR_SAW_O_H);
+			e_SAW += CATENR_Saw		 (p->H[r1], p->O[r2], CATENR_SAW_O_H);
 
 			if(e_SAW>0) {
 			 	C->DE=energ_CaCa+energ_HB+energ_Bend+e_SAW;
@@ -408,13 +420,13 @@ void Compute_delta_en(mc_move_data *mvdt,conf *C, energy_par *ep)
 				energ_HB	+=CATENR_HB 	(p->H[r2],p->N[r2],p->O[r1],p->C[r1],CATENR_HB_PREF);
 			}
 		} else if (r1 != r2) {
-			e_SAW += CATENR_Saw_g(p->O[r1], p->O[r2], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
-			e_SAW += CATENR_Saw_g(p->H[r1], p->H[r2], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
+			e_SAW += CATENR_Saw(p->O[r1], p->O[r2], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
+			e_SAW += CATENR_Saw(p->H[r1], p->H[r2], CATENR_SAW_H_H); // H_{i} - H_{i+1, i-1}
 
-			e_SAW += CATENR_Saw_g(p->O[r1], p->H[r2], CATENR_SAW_O_H);
-			e_SAW += CATENR_Saw_g(p->H[r1], p->O[r2], CATENR_SAW_O_H);
+			e_SAW += CATENR_Saw(p->O[r1], p->H[r2], CATENR_SAW_O_H);
+			e_SAW += CATENR_Saw(p->H[r1], p->O[r2], CATENR_SAW_O_H);
 		} else if(r1==r2) {
-			e_SAW += CATENR_Saw_g(p->O[r1], p->H[r2], CATENR_SAW_O_H);
+			e_SAW += CATENR_Saw(p->O[r1], p->H[r2], CATENR_SAW_O_H);
 		}
 		if(e_SAW>0) {
 			break;

@@ -1,5 +1,13 @@
 # Concerted rotations of protein backbones using Wolfram Mathematica
 
+This repository contains the source code to generate concerted rotations of a protein backbone using the approach introduced by [Zamuner et al](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0118342).
+In our implementation, the C code is precomputed using Wolfram Mathematica, making it significantly fast. While the library in this repository implements a move of 7 consecutive dihedrals on a protein backbone, the 
+user can modify the Mathematica notebook and Python wrapper to use a different set of free variables, or the C source code to reproduce a different backbone. The geometry of the backbone is known to the concerted rotation 
+algorithm only through the function which convert the backbone into a series of Denavit-Hartenberg parameters.
+
+The general scheme of our library is reported in the following diagram:
+[!Automated concerted rotations]('./Images/from_mathematica_to_C.png')
+
 To generate the precompiled code for a generic concerted rotation, open and run the Mathematica notebook 
 in folder `Code/generic_move`.
 
