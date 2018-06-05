@@ -6,7 +6,7 @@ user can modify the Mathematica notebook and Python wrapper to use a different s
 algorithm only through the function which convert the backbone into a series of Denavit-Hartenberg parameters.
 
 The general scheme of our library is reported in the following diagram:
-[!Automated concerted rotations]('./Images/from_mathematica_to_C.png')
+![Automated concerted rotations]('./Images/from_mathematica_to_C.png')
 
 To generate the precompiled code for a generic concerted rotation, open and run the Mathematica notebook 
 in folder `Code/generic_move`.
