@@ -42,5 +42,5 @@ Sequence and sequence length are hardcoded in the code at beginning of `concerte
 
 * Instructions on how to change the 7 free variables are included in the Mathematica notebooke in `Code/generic_move`. 
 * The library produced by Mathematica+Python works using the DH hartenberg convention. In order to simulate a different backbone one has to write a function which constructs the DH bases starting from that. Check `Code/minimal.c` for a minimal example, and `Code/lib/CAT_moves.c` for the functions mapping a protein backbone into a set of DH parameters.
-
+* Full documentation on the code can be found [here](Documentation/html/index.html)
 
