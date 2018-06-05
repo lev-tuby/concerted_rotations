@@ -6,7 +6,12 @@ user can modify the Mathematica notebook and Python wrapper to use a different s
 algorithm only through the function which convert the backbone into a series of Denavit-Hartenberg parameters.
 
 The general scheme of our library is reported in the following diagram:
-![Automated concerted rotations]('./Images/from_mathematica_to_C.png')
+
+<div style="text-align:center">
+  <img src="Images/from_mathematica_to_C.png" width="600">
+</div>
+
+## Generating the code
 
 To generate the precompiled code for a generic concerted rotation, open and run the Mathematica notebook 
 in folder `Code/generic_move`.
@@ -32,5 +37,10 @@ to test their influence on the concerted rotation sampling.
 * Variance of normal distribution used to obtain step sizes in tangent space: `sigma`
 
 Sequence and sequence length are hardcoded in the code at beginning of `concerted_rot.c`.
+
+## Modifying the concerted rotation
+
+* Instructions on how to change the 7 free variables are included in the Mathematica notebooke in `Code/generic_move`. 
+* The library produced by Mathematica+Python works using the DH hartenberg convention. In order to simulate a different backbone one has to write a function which constructs the DH bases starting from that. Check `Code/minimal.c` for a minimal example, and `Code/lib/CAT_moves.c` for the functions mapping a protein backbone into a set of DH parameters.
 
 
