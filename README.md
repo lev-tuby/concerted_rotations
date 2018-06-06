@@ -31,6 +31,7 @@ Zamuner's concerted rotations algorithm basically consists of the following step
 5. Accept or reject the move with the correct weight, based on the probability to obtain the backward step.
 
 These steps are represented schematically below.
+
 <p align="center">
   <img src="Images/tangent_space.png" width="400">
 </p>
@@ -38,6 +39,7 @@ These steps are represented schematically below.
 ### Impact of the Gaussian distribution width to move efficiency
 
 The gaussian distribution controls the length of the step. Larger values of its width, sigma, allow for longer steps, but also cause a larger rejection rate. As described in our paper, we investigated the effect of different values of sigma on the time necessary to sample the configurational space of a phantom protein backbone. In particular, we considered the time needed to reach a given value of the coefficient B, measuring the convergence to a uniform distribution. The results, reported in the figure below, show that the optimal value of sigma is around 0.2.
+
 <p align="center">
   <img src="Images/panel_2x2_new.png" width="800">
 </p>
