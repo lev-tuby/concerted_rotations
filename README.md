@@ -5,6 +5,18 @@ In our implementation, the C code is precomputed using Wolfram Mathematica, maki
 user can modify the Mathematica notebook and Python wrapper to use a different set of free variables, or the C source code to reproduce a different backbone. The geometry of the backbone is known to the concerted rotation 
 algorithm only through the function which convert the backbone into a series of Denavit-Hartenberg parameters.
 
+<div style="text-align:center">
+  <img src="Images/Quick_mathematical_introduction.png">
+</div>
+
+<div style="text-align:center">
+  <img src="Images/scheme.png" width="600">
+</div>
+
+The figure above provides a graphical example for the concerted rotation of three consecutive residues on a polypeptide chain. This involves seven T matrices. The matrices, the constraint function and the derivatives necessary to define the tangent space to the constraint manifold are obtained in our Mathematica notebook.
+
+## Library implementation
+
 The general scheme of our library is reported in the following diagram:
 
 <div style="text-align:center">
@@ -37,10 +49,10 @@ to test their influence on the concerted rotation sampling.
 * Variance of normal distribution used to obtain step sizes in tangent space: `sigma`
 
 Sequence and sequence length are hardcoded in the code at beginning of `concerted_rot.c`.
+## Generating the detailed documentation
+All code is commented following doxygen standard. Users can generate the complete documentation by running [doxygen](http://www.stack.nl/~dimitri/doxygen/) in the base folder.
 
 ## Modifying the concerted rotation
 
 * Instructions on how to change the 7 free variables are included in the Mathematica notebooke in `Code/generic_move`. 
 * The library produced by Mathematica+Python works using the DH hartenberg convention. In order to simulate a different backbone one has to write a function which constructs the DH bases starting from that. Check `Code/minimal.c` for a minimal example, and `Code/lib/CAT_moves.c` for the functions mapping a protein backbone into a set of DH parameters.
-* Full documentation on the code can be found [here](Documentation/html/index.html)
-
