@@ -15,6 +15,32 @@ algorithm only through the function which convert the backbone into a series of 
 
 The figure above provides a graphical example for the concerted rotation of three consecutive residues on a polypeptide chain. This involves seven T matrices. The matrices, the constraint function and the derivatives necessary to define the tangent space to the constraint manifold are obtained in our Mathematica notebook.
 
+## Concerted rotations on a Manifold
+
+The equations reported above allow us identify the constraint manifold corresponding the the condition that the starting and ending point of the moved portion must remain fixed. This gives 6 constraints: 3 for the orientation of the last bond and 3 for its position. If we consider a seventh free variable, we obtain a one dimensional manifold in R^6. 
+
+Zamuner's concerted rotations algorithm basically consists of the following steps.
+
+1. Identify the point on the manifold corresponding to the current backbone configuration.
+2. Identify the tangent space to that point, using Dini's theorem.
+3. Take a random step on the tangent space. The length of this step is drawn from a gaussian distribution of width sigma.
+4. Use a root-finding algorithm to project the the new point on the tangent space back on the manifold. The point so obtained gives us the new backbone configuration. 
+5. Accept or reject the move with the correct weight, based on the probability to obtain the backward step.
+
+These steps are represented schematically below.
+<div style="text-align:center">
+  <img src="Images/tangent_space.png" width="400">
+</div>
+
+### Impact of the Gaussian distribution width to move efficiency
+
+The gaussian distribution controls the length of the step. Larger values of its width, sigma, allow for longer steps, but also cause a larger rejection rate. As described in our paper, we investigated the effect of different values of sigma on the time necessary to sample the configurational space of a phantom protein backbone. In particular, we considered the time needed to reach a given value of the coefficient B, measuring the convergence to a uniform distribution. The results, reported in the figure below, show that the optimal value of sigma is around 0.2.
+
+<div style="text-align:center">
+  <img src="Images/panel_2x2_new.png" width="800">
+</div>
+
+
 ## Library implementation
 
 The general scheme of our library is reported in the following diagram:
