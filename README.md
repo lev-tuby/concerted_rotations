@@ -5,13 +5,16 @@ In our implementation, the C code is precomputed using Wolfram Mathematica, maki
 user can modify the Mathematica notebook and Python wrapper to use a different set of free variables, or the C source code to reproduce a different backbone. The geometry of the backbone is known to the concerted rotation 
 algorithm only through the function which convert the backbone into a series of Denavit-Hartenberg parameters.
 
-<div style="text-align:center">
-  <img src="Images/Quick_mathematical_introduction.png">
-</div>
 
-<div style="text-align:center">
+  <p align="center">
+  <img src="Images/Quick_mathematical_introduction.png">
+  </p>
+
+
+<p align="center">
   <img src="Images/scheme.png" width="600">
-</div>
+</p>
+
 
 The figure above provides a graphical example for the concerted rotation of three consecutive residues on a polypeptide chain. This involves seven T matrices. The matrices, the constraint function and the derivatives necessary to define the tangent space to the constraint manifold are obtained in our Mathematica notebook.
 
@@ -28,26 +31,24 @@ Zamuner's concerted rotations algorithm basically consists of the following step
 5. Accept or reject the move with the correct weight, based on the probability to obtain the backward step.
 
 These steps are represented schematically below.
-<div style="text-align:center">
+<p align="center">
   <img src="Images/tangent_space.png" width="400">
-</div>
+</p>
 
 ### Impact of the Gaussian distribution width to move efficiency
 
 The gaussian distribution controls the length of the step. Larger values of its width, sigma, allow for longer steps, but also cause a larger rejection rate. As described in our paper, we investigated the effect of different values of sigma on the time necessary to sample the configurational space of a phantom protein backbone. In particular, we considered the time needed to reach a given value of the coefficient B, measuring the convergence to a uniform distribution. The results, reported in the figure below, show that the optimal value of sigma is around 0.2.
-
-<div style="text-align:center">
+<p align="center">
   <img src="Images/panel_2x2_new.png" width="800">
-</div>
+</p>
 
 
 ## Library implementation
 
 The general scheme of our library is reported in the following diagram:
-
-<div style="text-align:center">
+<p align="center">
   <img src="Images/from_mathematica_to_C.png" width="600">
-</div>
+</p>
 
 ## Generating the code
 
