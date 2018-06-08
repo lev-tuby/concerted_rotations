@@ -1,0 +1,22 @@
+#!/bin/bash
+
+
+graphs(){
+	awk '{if($1=="sigma"){print $5, $6, $7, $8}}' $1 > sigmaDependence
+
+gnuplot << EOF
+set xlabel '{/Symbol s}'
+set term pdf enhanced
+
+set ylabel 'Time spend in random\_rot [ms]'
+set output 'sigma_time.pdf'
+plot 'sigmaDependence' u 1:(\$2*1000) w lp t ''
+
+set ylabel 'Reject probability'
+set output 'sigma_reject.pdf'
+plot 'sigmaDependence' u 1:3 w lp t ''
+
+EOF
+}
+
+graphs $1

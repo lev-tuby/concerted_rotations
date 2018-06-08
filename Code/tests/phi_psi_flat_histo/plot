@@ -1,12 +1,11 @@
 #!/bin/bash
 
+rmachandran(){
+	nbinds=$(wc -l $(ls *.dat | tail -n 1))
 
-#./test_phi_psi_flat_histo.x aapot > output 2>&1
-
-len=180
-binWidth=$(bc <<< "scale=8;(2.0 * ${len} ) / 180.0")
-filePath=$(ls *.dat | head -n 1)
-
+	for f in $(ls *.dat); do
+		len=180
+		binWidth=$(bc <<< "scale=8;(2.0 * ${len} ) / 180.0")
 gnuplot << EOF
 
 set xlabel '{/Symbol f}'
@@ -14,8 +13,62 @@ set ylabel '{/Symbol y}'
 set view map
 
 set term pdf enhanced
-set output '${filePath%%dat}pdf'
-splot [-180.0:179.0][-180.0:179.0][:] '${filePath}' u (\$1*${binWidth}-${len}+0.5):(\$2*${binWidth}-${len}+0.5):3 matrix w image t ''
+set output '${f%%dat}pdf'
+splot '${f}' u (\$1*${binWidth}-${len}):(\$2*${binWidth}-${len}):3 matrix w image t ''
 pause mouse keypress
+EOF
+    done
+}
+
+bh(){
+awk 'BEGIN{bins=0;entries=0;BC_coeficient=0}
+    {
+        if(NR!=FNR && FNR==1){
+            ## first line second read through matrix
+            ## we calculate mean ocupancy of bin in flat distribution
+            mean_ocupancy=entries/bins;
+            mean_probability=mean_ocupancy/entries;
+        }
+        if(NR==FNR){
+            bins+=NF;
+            for(i=0;i<=NF;i++){
+                entries+=$i;
+            }
+        }else{
+            for(i=0;i<=NF;i++){
+                BC_coeficient+=sqrt(($i/entries) * mean_probability)
+            }
+        }
+    }
+    END{
+        print BC_coeficient;
+    }' ${1} ${1}
+}
+
+rmachandran
+
+min=10000;
+step=10000;
+max=4000000;
+
+sigma=$(ls data_* | head -n 1)
+for iter in $(seq $min $step $max); do
+    if [ -f "$(printf "${sigma%%_time*}_time_%08i.dat" $iter)" ]; then
+        echo "$iter $(bh "$(printf "${sigma%%_time*}_time_%08i.dat" $iter)")" >> BC.dat
+    fi
+done
+
+gnuplot << EOF
+
+set xlabel 'Iteration in 10^6'
+set ylabel 'Bhattacharyya distance'
+
+set term pdf enhanced
+set output 'BC.pdf'
+plot 'BC.dat' u (\$1*0.000001):2 w lp t ''
 
 EOF
+
+
+
+

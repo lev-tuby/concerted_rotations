@@ -1,9 +1,20 @@
+/**
+ * @file
+ * @brief Source file contain functions for memory allocation/deallocation
+ */
+
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include "my_memory.h"
 #include "messages.h"
 
+/**
+ *
+ * @param[in]        n1              Number of files in array.
+ *
+ * @return pointer to array of FILEs
+ */
 FILE **F2t (int n1)
 {
   FILE **p;
@@ -12,6 +23,13 @@ FILE **F2t (int n1)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of first dimension.
+ *
+ * @return pointer to matrix (n1, n2) of FILEs
+ */
 FILE ***F3t (int n1, int n2)
 {
   FILE ***p;
@@ -24,6 +42,13 @@ FILE ***F3t (int n1, int n2)
     p[i + 1] = p[i] + n2;
   return p;
 }
+
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ *
+ * @return pointer to array of char
+ */
 char *c1t (int n1)
 {
   char *p;
@@ -32,6 +57,13 @@ char *c1t (int n1)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ *
+ * @return pointer to matrix (n1, n2) of FILEs
+ */
 char **c2t (int n1, int n2)
 {
   char **p;
@@ -45,6 +77,14 @@ char **c2t (int n1, int n2)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ *
+ * @return pointer to char matrix
+ */
 char ***c3t (int n1, int n2, int n3)
 {
   char ***p;
@@ -67,7 +107,15 @@ char ***c3t (int n1, int n2, int n3)
   return p;
 }
 
-
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ * @param[in]        n4              Size of fourth dimension.
+ *
+ * @return pointer to char matrix
+ */
 char ****c4t (int n1, int n2, int n3, int n4)
 {
   char ****p, *a;
@@ -116,9 +164,65 @@ char ****c4t (int n1, int n2, int n3, int n4)
   return p;
 }
 
+/**
+ *
+ * @param[in,out]  ****p              Array.
+ *
+ * @return \c void
+ */
+void free_c4t(char ****p){
+
+  free(p[0][0][0]);
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]   ***p              Array.
+ *
+ * @return \c void
+ */
+void free_c3t(char ***p){
+
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]    **p              Array.
+ *
+ * @return \c void
+ */
+void free_c2t(char **p){
+
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]     *p              Array.
+ *
+ * @return \c void
+ */
+void free_c1t(char *p){
+
+  free(p);
+}
 
 
+/*********************************/
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ *
+ * @return pointer to short array
+ */
 short *s1t (int n1)
 {
   short *p, *a;
@@ -130,6 +234,13 @@ short *s1t (int n1)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ *
+ * @return pointer to short array
+ */
 short **s2t (int n1, int n2)
 {
   short **p, *a;
@@ -145,6 +256,14 @@ short **s2t (int n1, int n2)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ *
+ * @return pointer to short array
+ */
 short ***s3t (int n1, int n2, int n3)
 {
   short ***p, *a;
@@ -169,6 +288,15 @@ short ***s3t (int n1, int n2, int n3)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ * @param[in]        n4              Size of fourth dimension.
+ *
+ * @return pointer to short array
+ */
 short ****s4t (int n1, int n2, int n3, int n4)
 {
   short ****p, *a;
@@ -217,10 +345,64 @@ short ****s4t (int n1, int n2, int n3, int n4)
   return p;
 }
 
+/**
+ *
+ * @param[in,out]  ****p              Array.
+ *
+ * @return \c void
+ */
+void free_s4t(short ****p){
+
+  free(p[0][0][0]);
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]   ***p              Array.
+ *
+ * @return \c void
+ */
+void free_s3t(short ***p){
+
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]    **p              Array.
+ *
+ * @return \c void
+ */
+void free_s2t(short **p){
+
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]     *p              Array.
+ *
+ * @return \c void
+ */
+void free_s1t(short *p){
+
+  free(p);
+}
+/*********************************/
 
 
-
-
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ *
+ * @return pointer to int array
+ */
 int *i1t (int n1)
 {
   int *p, *a;
@@ -232,6 +414,13 @@ int *i1t (int n1)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ *
+ * @return pointer to int array
+ */
 int **i2t (int n1, int n2)
 {
   int **p, *a;
@@ -247,6 +436,14 @@ int **i2t (int n1, int n2)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ *
+ * @return pointer to int array
+ */
 int ***i3t (int n1, int n2, int n3)
 {
   int ***p, *a;
@@ -271,6 +468,15 @@ int ***i3t (int n1, int n2, int n3)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ * @param[in]        n4              Size of fourth dimension.
+ *
+ * @return pointer to int array
+ */
 int ****i4t (int n1, int n2, int n3, int n4)
 {
   int ****p, *a;
@@ -320,6 +526,65 @@ int ****i4t (int n1, int n2, int n3, int n4)
 }
 
 
+
+/**
+ *
+ * @param[in,out]  ****p              Array.
+ *
+ * @return \c void
+ */
+void free_i4t(int ****p){
+
+  free(p[0][0][0]);
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]   ***p              Array.
+ *
+ * @return \c void
+ */
+void free_i3t(int ***p){
+
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]    **p              Array.
+ *
+ * @return \c void
+ */
+void free_i2t(int **p){
+
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]     *p              Array.
+ *
+ * @return \c void
+ */
+void free_i1t(int *p){
+
+  free(p);
+}
+
+/*********************************/
+
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ *
+ * @return pointer to float array
+ */
 float *f1t (int n1)
 {
   float *p, *a;
@@ -331,6 +596,13 @@ float *f1t (int n1)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ *
+ * @return pointer to float array
+ */
 float **f2t (int n1, int n2)
 {
   float **p, *a;
@@ -346,6 +618,14 @@ float **f2t (int n1, int n2)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ *
+ * @return pointer to float array
+ */
 float ***f3t (int n1, int n2, int n3)
 {
   float ***p, *a;
@@ -370,6 +650,15 @@ float ***f3t (int n1, int n2, int n3)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ * @param[in]        n4              Size of fourth dimension.
+ *
+ * @return pointer to float array
+ */
 float ****f4t (int n1, int n2, int n3, int n4)
 {
   float ****p, *a;
@@ -418,6 +707,16 @@ float ****f4t (int n1, int n2, int n3, int n4)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ * @param[in]        n4              Size of fourth dimension.
+ * @param[in]        n5              Size of fifth dimension.
+ *
+ * @return pointer to float array
+ */
 float *****f5t (int n1, int n2, int n3, int n4, int n5)
 {
   float *****p, *a;
@@ -508,6 +807,79 @@ float *****f5t (int n1, int n2, int n3, int n4, int n5)
   return p;
 }
 
+/**
+ *
+ * @param[in,out] *****p              Array.
+ *
+ * @return \c void
+ */
+void free_f5t(float *****p){
+
+  free(p[0][0][0][0]);
+  free(p[0][0][0]);
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]  ****p              Array.
+ *
+ * @return \c void
+ */
+void free_f4t(float ****p){
+
+  free(p[0][0][0]);
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]   ***p              Array.
+ *
+ * @return \c void
+ */
+void free_f3t(float ***p){
+
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]    **p              Array.
+ *
+ * @return \c void
+ */
+void free_f2t(float **p){
+
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]     *p              Array.
+ *
+ * @return \c void
+ */
+void free_f1t(float *p){
+
+  free(p);
+}
+
+/*********************************/
+
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ *
+ * @return pointer to double array
+ */
 double *d1t (int n1)
 {
   double *p, *a;
@@ -519,6 +891,13 @@ double *d1t (int n1)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ *
+ * @return pointer to double array
+ */
 double **d2t (int n1, int n2)
 {
   double **p, *a;
@@ -534,6 +913,14 @@ double **d2t (int n1, int n2)
   return p;
 }
 
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ *
+ * @return pointer to double array
+ */
 double ***d3t (int n1, int n2, int n3)
 {
   double ***p, *a;
@@ -558,8 +945,15 @@ double ***d3t (int n1, int n2, int n3)
   return p;
 }
 
-
-
+/**
+ *
+ * @param[in]        n1              Size of first dimension.
+ * @param[in]        n2              Size of second dimension.
+ * @param[in]        n3              Size of third dimension.
+ * @param[in]        n4              Size of fourth dimension.
+ *
+ * @return pointer to double array
+ */
 double ****d4t (int n1, int n2, int n3, int n4)
 {
   double ****p, *a;
@@ -609,8 +1003,67 @@ double ****d4t (int n1, int n2, int n3, int n4)
 }
 
 
-void 
-readeol (FILE * fp)
+
+/**
+ *
+ * @param[in,out]  ****p              Array.
+ *
+ * @return \c void
+ */
+void free_d4t(double ****p){
+
+  free(p[0][0][0]);
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]   ***p              Array.
+ *
+ * @return \c void
+ */
+void free_d3t(double ***p){
+
+  free(p[0][0]);
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]    **p              Array.
+ *
+ * @return \c void
+ */
+void free_d2t(double **p){
+
+  free(p[0]);
+  free(p);
+}
+
+/**
+ *
+ * @param[in,out]     *p              Array.
+ *
+ * @return \c void
+ */
+void free_d1t(double *p){
+
+  free(p);
+}
+
+/**********************************/
+
+
+/**
+ *
+ * @param[in,out]   *fp              Pointer to file which will got to end of line.
+ *
+ * @return \c void
+ */
+void readeol (FILE * fp)
 {
   char s;
   while ((s = getc (fp)) != EOF)
@@ -618,7 +1071,13 @@ readeol (FILE * fp)
       return;
 }
 
-
+/**
+ *
+ * @param[in]        a              Base.
+ * @param[in]        n              Power.
+ *
+ * @return \f$a^n\f$
+ */
 int myipow (int a, int n)
 {
   int b = a;
@@ -627,8 +1086,14 @@ int myipow (int a, int n)
   return a;
 }
 
-float 
-myfpow (float a, int n)
+/**
+ *
+ * @param[in]        a              Base.
+ * @param[in]        n              Power.
+ *
+ * @return \f$a^n\f$
+ */
+float myfpow (float a, int n)
 {
   float b = a;
   while (--n > 0)
@@ -636,6 +1101,13 @@ myfpow (float a, int n)
   return a;
 }
 
+/**
+ *
+ * @param[in]        a              Base.
+ * @param[in]        n              Power.
+ *
+ * @return \f$a^n\f$
+ */
 double mydpow (double a, int n)
 {
   double b = a;
@@ -644,6 +1116,14 @@ double mydpow (double a, int n)
   return a;
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]        m              Second dimension of array.
+ * @param[in]      **a              Array.
+ *
+ * @return \c void
+ */
 void pdarray (int n, int m, double **a)
 {
   int i, j;
@@ -656,6 +1136,13 @@ void pdarray (int n, int m, double **a)
     }
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]      **a              Array.
+ *
+ * @return \c void
+ */
 void pdvector (int n, double *a)
 {
   int i;
@@ -665,6 +1152,14 @@ void pdvector (int n, double *a)
   printf ("\n");
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]        m              Second dimension of array.
+ * @param[in]      **a              Array.
+ *
+ * @return \c void
+ */
 void pfarray (int n, int m, float **a)
 {
   int i, j;
@@ -677,6 +1172,13 @@ void pfarray (int n, int m, float **a)
     }
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]      **a              Array.
+ *
+ * @return \c void
+ */
 void pfvector (int n, float *a)
 {
   int i;
@@ -686,6 +1188,14 @@ void pfvector (int n, float *a)
   printf ("\n");
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]        m              Second dimension of array.
+ * @param[in]      **a              Array.
+ *
+ * @return \c void
+ */
 void piarray (int n, int m, int **a)
 {
   int i, j;
@@ -698,6 +1208,13 @@ void piarray (int n, int m, int **a)
     }
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]      **a              Array.
+ *
+ * @return \c void
+ */
 void pivector (int n, int *a)
 {
   int i;
@@ -707,6 +1224,14 @@ void pivector (int n, int *a)
   printf ("\n");
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]        m              Second dimension of array.
+ * @param[in,out]  **a              Array.
+ *
+ * @return \c void
+ */
 void zdarray (int n, int m, double **a)
 {
   int i, j;
@@ -715,6 +1240,13 @@ void zdarray (int n, int m, double **a)
       a[i][j] = 0.0;
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in,out]  **a              Array.
+ *
+ * @return \c void
+ */
 void zdvector (int n, double *a)
 {
   int i;
@@ -722,6 +1254,14 @@ void zdvector (int n, double *a)
     a[i] = 0.0;
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]        m              Second dimension of array.
+ * @param[in,out]  **a              Array.
+ *
+ * @return \c void
+ */
 void zfarray (int n, int m, float **a)
 {
   int i, j;
@@ -730,6 +1270,13 @@ void zfarray (int n, int m, float **a)
       a[i][j] = 0.0;
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in,out]  **a              Array.
+ *
+ * @return \c void
+ */
 void zfvector (int n, float *a)
 {
   int i;
@@ -737,6 +1284,14 @@ void zfvector (int n, float *a)
     a[i] = 0.0;
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in]        m              Second dimension of array.
+ * @param[in,out]  **a              Array.
+ *
+ * @return \c void
+ */
 void ziarray (int n, int m, int **a)
 {
   int i, j;
@@ -745,6 +1300,13 @@ void ziarray (int n, int m, int **a)
       a[i][j] = 0;
 }
 
+/**
+ *
+ * @param[in]        n              First dimension of array.
+ * @param[in,out]  **a              Array.
+ *
+ * @return \c void
+ */
 void zivector (int n, int *a)
 {
   int i;
@@ -756,155 +1318,20 @@ void zivector (int n, int *a)
 
 /*********************************/
 
-void free_c4t(char ****p){
-
-  free(p[0][0][0]);
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_c3t(char ***p){
-
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_c2t(char **p){
-
-  free(p[0]);
-  free(p);
-}
-
-void free_c1t(char *p){
-
-  free(p);
-}
 
 
-/*********************************/
 
-void free_s4t(short ****p){
 
-  free(p[0][0][0]);
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_s3t(short ***p){
-
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_s2t(short **p){
-
-  free(p[0]);
-  free(p);
-}
-
-void free_s1t(short *p){
-
-  free(p);
-}
-/*********************************/
-
-void free_i4t(int ****p){
-
-  free(p[0][0][0]);
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_i3t(int ***p){
-
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_i2t(int **p){
-
-  free(p[0]);
-  free(p);
-}
-
-void free_i1t(int *p){
-
-  free(p);
-}
-
-/*********************************/
-
-void free_f5t(float *****p){
-
-  free(p[0][0][0][0]);
-  free(p[0][0][0]);
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_f4t(float ****p){
-
-  free(p[0][0][0]);
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_f3t(float ***p){
-
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_f2t(float **p){
-
-  free(p[0]);
-  free(p);
-}
-
-void free_f1t(float *p){
-
-  free(p);
-}
-
-/*********************************/
-
-void free_d4t(double ****p){
-
-  free(p[0][0][0]);
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_d3t(double ***p){
-
-  free(p[0][0]);
-  free(p[0]);
-  free(p);
-}
-
-void free_d2t(double **p){
-
-  free(p[0]);
-  free(p);
-}
-
-void free_d1t(double *p){
-
-  free(p);
-}
-
-/**********************************/
-/*--ADDED LT ---*/
+/**
+ *
+ *
+ * @param[in]          n              First dimension.
+ * @param[in]          m              Second dimension.
+ * @param[in,out]    **a              2D double array.
+ * @param[in,out]     *F              File from where values are readed.
+ *
+ * @return \c void
+ */
 void rdarray(int n, int m, double **a, FILE *F)
 {
 	int i,j;
@@ -927,6 +1354,16 @@ void rdarray(int n, int m, double **a, FILE *F)
 	}
 }
 
+/**
+ *
+ *
+ *
+ * @param[in]          n              First and second dimension.
+ * @param[in,out]    **a              2D double array.
+ * @param[in,out]     *F              File from where values are readed.
+ *
+ * @return \c void
+ */
 void rdarray_symm (int n, double **a, FILE *F)
 {
 	int i,j;
@@ -950,6 +1387,14 @@ void rdarray_symm (int n, double **a, FILE *F)
 	}
 }
 
+/**
+ *
+ * @param[in]          n              Length of vector.
+ * @param[in,out]    **a              1D double vector.
+ * @param[in,out]     *F              File from where values are readed.
+ *
+ * @return \c void
+ */
 void rdvector (int n, double *a, FILE *F)
 {
 	int i;
@@ -968,3 +1413,4 @@ void rdvector (int n, double *a, FILE *F)
 		}
 	}
 }
+

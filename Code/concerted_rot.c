@@ -1,18 +1,25 @@
+/**
+ * @file
+ * @brief Main implementation of concerted rotation move 
+ * This program is suppose to simulate peptide backbone in Caterpillar model.
+ */
+
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_sf.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <gsl/gsl_math.h>
 
 
 #include "./lib/Caterpillar_energies.h"
 #include "./lib/my_memory.h"
 #include "./lib/my_geom.h"
-#include "./lib/geom_prop.h"
 #include "./lib/Caterpillar_IO.h"
 #include "./lib/CAT_moves.h"
 #include "./lib/quaternions.h"
 #include "./lib/histogram.h"
+#include "./lib/messages.h"
 
 #define ACC 1
 #define REJ 0
@@ -59,6 +66,10 @@ int acceptMove(mc_traj_data *mctrj);
 
 void CAT_copy(cat_prot *dest, cat_prot *orig);
 void Init_MC(mc_move_data **mvdt, mc_traj_data **mc_traj, char file_conf[1024],char file_pot[1024]);
+
+    int global_warn=0;
+    int global_max_warn=0;
+
 
 int main(int argc, char *argv[])
 {

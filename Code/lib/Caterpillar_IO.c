@@ -2,6 +2,19 @@
 #include "messages.h"
 #include "my_memory.h"
 
+/**
+ * @brief Function code FASTA code in number code used internaly in Catepillar model
+ *
+ * @note Potentionaly dangerous function which might cause writing in non-allocated memory etc.
+ *
+ * @todo I would remove function from here since now coding/decoding is done with #CAT_FASTA and #CAT_AACODE.
+ *
+ * @param[out]     *Dec              FASTA decoded in internal number representation.
+ * @param[in]      *Enc              Original FASTA one letter string.
+ * @param[in]       Seq_Length       Length of string.
+ *
+ * @return \c void
+ */
 void CATIO_fastadecoder (int *Dec, char *Enc,int Seq_Length)
 {
 	int i;
@@ -79,9 +92,21 @@ void CATIO_fastadecoder (int *Dec, char *Enc,int Seq_Length)
 	}
 }
 
+/**
+ * @brief Function take internal reresentation of Caterpillar backbone and save it in PDB file
+ *
+ * @todo ... change usage of N_prot ... its not used corectly.
+ *
+ * @param[in]      *filename         Path to output PDB file.
+ * @param[in]      *writemode        Write mode.
+ * @param[in]      *remark           Text to be printed in REMARKS in output PDB.
+ * @param[in]      *prot             Caterpillar PDB backbone representation.
+ * @param[in]       N_prot           This might be wrong ... Here it is used as number of residues in prot ... howvever it is accesible through prot.n_res ...
+ *
+ * @return \c void
+ */
 void CATIO_cat2pdb 		(  char *filename, char *writemode, char *remark, cat_prot *prot,  int N_prot)
 {
-	//Tested OK for 1 protein and writemode "w" only. LT 02.08.16
 	int i,j,k,l;
 	int N_at;
 	int N_res;
@@ -172,10 +197,24 @@ void CATIO_cat2pdb 		(  char *filename, char *writemode, char *remark, cat_prot 
 	}
 }
 
-void CATIO_pdb2cat  	( cat_prot **prot, int *N_prot, int N_atom_types, char ATnames[N_atom_types][5], char Loc_keep, char *filename)
+/**
+ * @brief Function read PDB file and save it to internal Caterpillar model
+ *
+ * Tested OK 12/07/17
+ * @note Does not insert hydrogens, does not rescale, does not compute dihedrals
+ * @todo ... change usage of N_prot ... is not usd in function at all.
+ *
+ * @param[in,out] **prot             Output Caterpillar representation of protein.
+ * @param[in]      *N_prot           Not used value.
+ * @param[in]       N_atom_types     Maximal index of atom type to bee kept.
+ * @param[in]       ATnames          Set of atom names in PDB from which selection of kept atom types is made.
+ * @param[in]       Loc_keep         What alternative atom positions are kept.
+ * @param[in]      *filename         Path to PDB file.
+ *
+ * @return \c void
+ */
+void CATIO_pdb2cat ( cat_prot **prot, int *N_prot, int N_atom_types, char ATnames[N_atom_types][5], char Loc_keep, char *filename)
 {
-	//Tested OK 12/07/17
-	//Note: does not insert hydrogens, does not rescale, does not compute dihedrals
 	pdb_atom_list *atoms=NULL;
 	pdb_atom_list *pn,*pp;
 	char 	error[1024];
@@ -324,6 +363,17 @@ void CATIO_pdb2cat  	( cat_prot **prot, int *N_prot, int N_atom_types, char ATna
 	free_d2t(buff_coord);
 }
 
+/**
+ * @brief Function read PDB file and save it to internal Caterpillar model (keep CB atoms positions)
+ *
+ * @todo ... change usage of N_prot ... is not usd in function at all.
+ *
+ * @param[in,out] **prot             Output Caterpillar representation of protein.
+ * @param[in]      *N_prot           Not used value.
+ * @param[in]      *filename         Path to PDB file.
+ *
+ * @return \c void
+ */
 void CATIO_pdb2cat_keep_CB  	( cat_prot **prot, int *N_prot, char *filename)
 {
 	pdb_atom_list *atoms=NULL;
@@ -484,7 +534,18 @@ void CATIO_pdb2cat_keep_CB  	( cat_prot **prot, int *N_prot, char *filename)
 	free_d2t(buff_coord);
 }
 
-
+/**
+ * @brief Function take internal reresentation of Caterpillar backbone and save it in binary format of PDB file
+ *
+ * @todo ... change usage of N_prot ... its not used corectly.
+ *
+ * @param[in]      *filename         Path to output PDB file.
+ * @param[in]      *writemode        Write mode.
+ * @param[in]      *prot             Caterpillar PDB backbone representation.
+ * @param[in]       N_prot           This might be wrong ... Here it is used as number of residues in prot ... howvever it is accesible through prot.n_res ...
+ *
+ * @return \c void
+ */
 void CATIO_cat2oldbin 			( char *filename, char *writemode, cat_prot *prot, int N_prot )
 {
 	double x,y,z;
@@ -526,12 +587,23 @@ void CATIO_cat2oldbin 			( char *filename, char *writemode, cat_prot *prot, int 
 	}
 	fclose(bin_out);
 }
+
+/**
+ * @brief Function read binary PDB file format and save it to internal Caterpillar model
+ *
+ * Compatibility version. N_prot is passed to the function. It would make
+ * much more sense to save it on the binary file. Also prot must already be
+ * allocate with a valid number of atoms and residues, which will be read from
+ * the file.
+ *
+ * @param[in,out]  *prot             Output Caterpillar representation of protein.
+ * @param[in]      *N_prot           Not used value.
+ * @param[in]      *filename         Path to PDB file.
+ *
+ * @return \c void
+ */
 void CATIO_oldbin2cat  		( cat_prot *prot, int N_prot, char *filename)
 {
-	//Compatibility version. N_prot is passed to the function. It would make
-	//much more sense to save it on the binary file. Also prot must already be
-	//allocate with a valid number of atoms and residues, which will be read from
-	//the file.
 	double x=0.,y=0.,z=0.0;
 	int i=0,pr=0,id=0,sorted_index=0;
 	int res=0;

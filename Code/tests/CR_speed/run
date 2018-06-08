@@ -1,5 +1,0 @@
-#!/bin/bash
-
-RANDOM_NUMBER=$RANDOM
-echo "RANDOM_NUMBER=${RANDOM_NUMBER}" > ./output
-./test_CR_speed.x ${RANDOM_NUMBER} >> ./output 2>&1

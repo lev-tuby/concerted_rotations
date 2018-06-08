@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Function for manipulation with #CAT_prot strcuture
+ */
+
 #include "CAT_moves.h"
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
@@ -8,44 +13,91 @@
 #include <gsl/gsl_multiroots.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_sf.h>
+#include <stdio.h>
+#include <math.h>
 #include "my_memory.h"
 #include "my_geom.h"
-#include "geom_prop.h"
 #include "../generic_move/CR_precomp.h"
-#include "Caterpillar_IO.h"
+//#include "Caterpillar_IO.h"
 
-cr_input_data set_cr_params_phi( cat_prot *p, int c);
-cr_input_data set_cr_params_psi( cat_prot *p, int c);
-double jac_Det(int a, cr_input_data bb_in);
-int solver		(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov);
+/**
+ * @brief Generates D-H backbone data structure format starting from phi angle
+ *
+ * Parameters set starts with phi angle of first residue defined by #c value
+ */
+cr_input_data set_cr_params_phi (cat_prot *p, int c);
+
+/**
+ * @brief Generates D-H backbone data structure format starting from phi angle
+ *
+ * Parameters set starts with psi angle of first residue defined by #c value
+ */
+cr_input_data set_cr_params_psi(cat_prot *p, int c);
+
+/**
+ * @brief Determinant of Dini's jacobian
+ * @param[in] a  			index of free variable
+ * @param[in] bb_in   current point on the c.r. manifold
+ */
+double jac_Det (int a, cr_input_data bb_in);
+
+/**
+ * @brief Finds a point on the c.r. manifold starting from a point on its tangent space, using a root-finding algorithm.
+ *
+ */
+int solver (cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov);
+
+/**
+ * @brief Function passed to the root-finding algorithm.
+ */
 int T7_solver (const gsl_vector *x, void *p, gsl_vector *f);
+
+/**
+ * @brief Prints iteration number and state of liner solver
+ */
 void print_state (int iter, gsl_multiroot_fsolver * s);
 
+/**
+ * @brief Structure storing the  parameters for solving projection from tangent space to mainfold used in #T7_solver
+ */
 struct rparams {
-	double s;
-	gsl_matrix *B;
-	gsl_vector *wspace;
-	cr_input_data bb_in;
-	cr_input_data bb_out;
+	double          s;          /**< Shift along tangent space. */
+	gsl_matrix      *B;         /**< Orthogonal basis set to tanget space. */
+	gsl_vector      *wspace;    /**< working memory for computations */
+	cr_input_data   bb_in;      /**< starting configuration in D-H convention. (4 residues) */
+	cr_input_data   bb_out;     /**< new configuration in D-H convention (4 residues) */
 };
 
-mc_move_data * CATMV_mc_move_data_alloc(int max_move_size,int len)
+/**
+ *
+ * #resid_pair that are moved are initialized to {-1, -1, -1.0}.
+ *
+ * @param[in]        max_move_size      Define how many residues could be altered in one move.
+ * @param[in]        len                Length of entire protein.
+ *
+ * @return initialized *#mc_move_data
+ */
+mc_move_data * CATMV_mc_move_data_alloc(int max_move_size, int len)
 {
 	mc_move_data *mvdt=(mc_move_data*)malloc(sizeof(mc_move_data));
 	mvdt->_l1=max_move_size;
 	mvdt->_l2=len;
 	int l1=mvdt->_l1;
 	int l2=mvdt->_l2;
-	mvdt->moved_res		=i1t(l1);
-	mvdt->mod_pairs=(atom_pair*)malloc(l1*l2*sizeof(atom_pair));
-	atom_pair ap_default={-1,-1,-1.0};
-	for(int i=0;i<l1*l2;i++)
-	{
+	mvdt->moved_res		=i1t(l1); //initializes to zero
+	mvdt->mod_pairs=(resid_pair*)malloc(l1*l2*sizeof(resid_pair));
+	resid_pair ap_default={-1,-1,-1.0};
+	for(int i=0;i<l1*l2;i++) {
 		mvdt->mod_pairs[i]=ap_default;
 	}
 	return mvdt;
 }
 
+/**
+ * @param[in,out]    mvdt     #mc_move_data structure to be deallocated
+ *
+ * @return \c void
+ */
 void CATMV_mc_move_data_free( mc_move_data *mvdt)
 {
 	free(mvdt->moved_res);
@@ -53,8 +105,18 @@ void CATMV_mc_move_data_free( mc_move_data *mvdt)
 	free(mvdt);
 }
 
-
-void CATMV_cranck	(mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
+/**
+ * @note The maximum cranckshaft size is 10 residues (hardcoded).
+ * @note The maximum angle is 0.1 radians (hardcoded)
+ *
+ * @param[in,out]   *cranck_data      Move data
+ * @param[in,out]   *p                protein
+ * @param[in]       *rng_r            GSL random number generator state
+ *
+ *
+ * @return \c void
+ */
+void CATMV_cranck (mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
 {
 	int k;
 	int end;
@@ -82,8 +144,7 @@ void CATMV_cranck	(mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
 	for(k=0;k<3;k++) { v_1[k] = p->CA[end][k] -	p->CA [c][k]; }
 	//rotate
 	rotate(&p->coord[start],len,p->CA[c],v_1,angle);
-	if(p->CB!=NULL)
-	{
+	if(p->CB!=NULL) {
 		CAT_insert_cbeta(p,end,CAT_Cb_AZIMUTH,CAT_Rbond_CCb);
 		CAT_insert_cbeta(p,c,CAT_Cb_AZIMUTH,CAT_Rbond_CCb);
 	}
@@ -99,18 +160,15 @@ void CATMV_cranck	(mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
 	cranck_data->N_moved=length+1;
 	//Save data on moved particles
 	k=0;
-	for(int i=0;i<cranck_data->N_moved;i++)
-	{
+	for(int i=0;i<cranck_data->N_moved;i++) {
 		cranck_data->moved_res[i]=c+i;
-		for(int j=0;j<=c;j++)
-		{
+		for(int j=0;j<=c;j++) {
 			cranck_data->mod_pairs[k].i_1=c+i;
 			cranck_data->mod_pairs[k].i_2=j;
 			cranck_data->mod_pairs[k].dist=-1.0;
 			k++;
 		}
-		for(int j=end;j<p->n_res;j++)
-		{
+		for(int j=end;j<p->n_res;j++) {
 			cranck_data->mod_pairs[k].i_1=c+i;
 			cranck_data->mod_pairs[k].i_2=j;
 			cranck_data->mod_pairs[k].dist=-1.0;
@@ -120,9 +178,21 @@ void CATMV_cranck	(mc_move_data *cranck_data, cat_prot *p, gsl_rng *rng_r)
 	cranck_data->N_pairs=k;
 }
 
+/**
+ * Moves the ends of the protein backbone. How many residues from both ends
+ * are affected is determined by #max_move_size.
+ * @note The maximum angle is 0.1 radians (hardcoded)
+ *
+ * @param[in,out]   *pivot_data       Move data
+ * @param[in,out]   *p                Modified protein
+ * @param[in]       *rng_r            GSL random number generator state
+ * @param[in]        max_move_size    Number of residues from each end to be affected by move
+ *
+ *
+ * @return \c void
+ */
 void CATMV_pivot	(mc_move_data *pivot_data, cat_prot *p, gsl_rng *rng_r, int max_move_size)
 {
-	//tested OK with VMD
 	int len,k;
 	double v_1[3];
 	double angle;
@@ -135,73 +205,61 @@ void CATMV_pivot	(mc_move_data *pivot_data, cat_prot *p, gsl_rng *rng_r, int max
 	else {verse=-1;}
 	type=(gsl_rng_uniform(rng_r)>0.5);
 	angle= 0.2*M_PI*(-0.5+gsl_rng_uniform(rng_r));
-	if (verse>0) //rotate following atoms
-	{
-		if (type==0) //N-CA
-		{
+	if (verse>0) {
+		//rotate residues with index > c
+		if (type==0){
+			//start from N-CA
 			//p->phi[c]+=angle;
 			p->phi[c]= gsl_sf_angle_restrict_symm(p->phi[c]+angle);
 			for(k=0;k<3;k++) { v_1[k] = p->CA[c][k] -	p->N [c][k]; }
 			start=c*p->n_atom_per_res+ATOM_C;
 			len=p->n_atoms-start;
 			rotate(&p->coord[start],len,p->CA[c],v_1,angle);
-		}
-		else  //CA-C
-		{
+		} else {
+			//start from CA-C
 			//p->psi[c]+=angle;
 			p->psi[c]= gsl_sf_angle_restrict_symm(p->psi[c]+angle);
 			for(k=0;k<3;k++) { v_1[k] = p->C[c][k] -	p->CA [c][k]; }
 			start=c*p->n_atom_per_res+ATOM_O;
 			len=p->n_atoms-start;
-			if(p->CB!=NULL)
-			{
+			if(p->CB!=NULL) {
 				double CB[3]={p->CB[c][0],p->CB[c][1],p->CB[c][2]};
 				rotate(&p->coord[start],len,p->C[c],v_1,angle);
 				p->CB[c][0]=CB[0]; p->CB[c][1]=CB[1]; p->CB[c][2]=CB[2];
-			}
-			else
-			{
+			} else {
 				rotate(&p->coord[start],len,p->C[c],v_1,angle);
 			}
 		}
-	}
-	else //rotate preceeding atoms
-	{
-		if (type==0) //N-CA
-		{
+	} else {
+		//rotate residues with index <c
+		if (type==0) {
+			//start from N-CA
 			//p->phi[c]+=angle;
 			p->phi[c]= gsl_sf_angle_restrict_symm(p->phi[c]+angle);
 			for(k=0;k<3;k++) { v_1[k] = p->N[c][k] -	p->CA [c][k]; }
 			len=c*p->n_atom_per_res+ATOM_N;//N excluded
 			rotate(p->coord,len,p->N[c],v_1,angle);
-		}
-		else  //CA-C
-		{
+		} else {
+			//start from CA-C
 			//p->psi[c]+=angle;
 			p->psi[c]= gsl_sf_angle_restrict_symm(p->psi[c]+angle);
 			for(k=0;k<3;k++) { v_1[k] = p->CA[c][k] -	p->C [c][k]; }
 			len=c*p->n_atom_per_res+ATOM_CA; //CA excluded
-			if(p->CB!=NULL)
-			{
+			if(p->CB!=NULL) {
 				rotate(p->coord,len,p->CA[c],v_1,angle);
 				rotate(&p->CB[c],1,p->CA[c],v_1,angle);
-			}
-			else
-			{
+			} else {
 				rotate(p->coord,len,p->CA[c],v_1,angle);
 			}
 		}
 	}
-	//Save data on moved particles
-	if (verse > 0)
-	{
+	//Store data on modified residues and residue pairs
+	if (verse > 0) {
 		pivot_data->N_moved=N_res-c;
 		k=0;
-		for(int i=0;i<pivot_data->N_moved;i++)
-		{
+		for(int i=0;i<pivot_data->N_moved;i++) {
 			pivot_data->moved_res[i]=c+i;
-			for(int j=0;j<=N_res-pivot_data->N_moved;j++)
-			{
+			for(int j=0;j<=N_res-pivot_data->N_moved;j++) {
 				pivot_data->mod_pairs[k].i_1=c+i;
 				pivot_data->mod_pairs[k].i_2=j;
 				pivot_data->mod_pairs[k].dist=-1.0;
@@ -209,17 +267,13 @@ void CATMV_pivot	(mc_move_data *pivot_data, cat_prot *p, gsl_rng *rng_r, int max
 			}
 		}
 		pivot_data->N_pairs=k;
-	}
-	else
-	{
+	} else {
 		pivot_data->N_moved=c+1;
 		k=0;
-		for(int i=0;i<pivot_data->N_moved;i++)
-		{
+		for(int i=0;i<pivot_data->N_moved;i++) {
 			//pivot_data->moved_res[i]=c+verse*i;
 			pivot_data->moved_res[i]=i;
-			for(int j=0;j<=N_res-pivot_data->N_moved;j++)
-			{
+			for(int j=0;j<=N_res-pivot_data->N_moved;j++) {
 				pivot_data->mod_pairs[k].i_1=i;
 				pivot_data->mod_pairs[k].i_2=c+j;
 				pivot_data->mod_pairs[k].dist=-1.0;
@@ -230,76 +284,77 @@ void CATMV_pivot	(mc_move_data *pivot_data, cat_prot *p, gsl_rng *rng_r, int max
 	}
 }
 
+/**
+ *
+ * @param[in,out]   *ra_data          Move data
+ * @param[in,out]   *p                Modified protein
+ * @param[in]       *rng_r            GSL random number generator state
+ * @param[in]        sigma            Sigma of normal distribution from which actual move length along tangent space is selected
+ *
+ * @return \c void
+ */
 void CATMV_concerted_rot(mc_move_data *ra_data, cat_prot *p, gsl_rng * rng_r, double sigma)
 {
-    // ra_data function only modifie which residues have moved so which pairs should be recalculated for E-change
+	// ra_data function only modifie which residues have moved so which pairs should be recalculated for E-change
 
 	int
-        k,                                                                              // used how many and which pairs have to be modified
-        start,                                                                          // specife residue index from which concentrated rotation is performed
-        error;                                                                          // variable for handling error codes
+		k,                           // used how many and which pairs have to be modified
+		start,                       // specife residue index from which concentrated rotation is performed
+		error;                       // variable for handling error codes
 
-	double 
-        w_ip1;                                                                          // variable used in constraining dihedral angles in the range (-\pi,\pi]
+	double
+		w_ip1;                       // variable used in constraining dihedral angles in the range (-\pi,\pi]
 
-    cr_input_data
-        bb_in,                                                                          // values used to store backbone initial configuration of 3 consecutive residues in format for concerted rotation
-        bb_out;                                                                         // modified values for backbone 3 consecutive residius generated by concerted rotation
+	cr_input_data
+		bb_in,                       // values used to store backbone initial configuration of 3 consecutive residues in format for concerted rotation
+		bb_out;                      // modified values for backbone 3 consecutive residius generated by concerted rotation
 
 
-    start= 1 + gsl_rng_uniform_int (rng_r, p->n_res - 4 );                              // select random residue from which we start concerted rotation move
+	start= 1 + gsl_rng_uniform_int (rng_r, p->n_res - 4 );          // select random residue from which we start concerted rotation move
 
-    bb_in = set_cr_params_phi(p,start);                                                 // allocate and initialize backbone parameters for 3 consecutive residues starting at residue with index "start"
+	bb_in = set_cr_params_phi(p,start);                             // allocate and initialize backbone parameters for 3 consecutive residues starting at residue with index "start"
 
-    alloc_cr_input_data(&bb_out);                                                       // alocate
+	alloc_cr_input_data(&bb_out);                                   // allocate
 
-    memcpy_cr_input_data(&bb_out, &bb_in);                                              // copy bb_in to bb_out
+	memcpy_cr_input_data(&bb_out, &bb_in);
 
 	//----------CONCERTED ROTATION------------
 	error = random_rot (bb_out, bb_in,rng_r, sigma);
-	if(error!=GSL_SUCCESS)
-	{
-        free_cr_input_data(&bb_in);                                                     //free some memory
-        free_cr_input_data(&bb_out);                                                    //free some memory
-        return;
+	if(error!=GSL_SUCCESS) {
+		free_cr_input_data(&bb_in);
+		free_cr_input_data(&bb_out);
+		return;
 	}
 	double w_ip2;
-	for(int i = 0; i < 3; i++)
-	{
+	for(int i = 0; i < 3; i++) {
 		w_ip1 = gsl_vector_get(bb_out.dihed_angles, i*2)-M_PI;
 		w_ip2 = gsl_vector_get(bb_out.dihed_angles, i*2+1);
 		gsl_vector_set(bb_out.dihed_angles, 2*i, gsl_sf_angle_restrict_symm(w_ip1));      //These routines force the angle theta to lie in the range (-\pi,\pi]
 		gsl_vector_set(bb_out.dihed_angles, 2*i+1, gsl_sf_angle_restrict_symm(w_ip2));      //These routines force the angle theta to lie in the range (-\pi,\pi]
 	}
-
-    for (int i = 0; i<3; i++)                                                           // Here we rebuild peptide chain base on set of dihedrals from concerted rotations
-    {
-        CAT_add_peptide(
-                        p,
-                        start+i,
-                        gsl_vector_get(bb_out.dihed_angles,i*2),
-                        gsl_vector_get(bb_out.bend_angles, i*2),
-                        gsl_vector_get(bb_out.dihed_angles,(i*2)+1)
-                        );
-    }
-
-    free_cr_input_data(&bb_in);                                                         //free some memory
-    free_cr_input_data(&bb_out);                                                        //free some memory
-
-	for(int i = start-1; i < start+4; i++)                                              // recalculate dihedral angles for whole protein
-    {
-		if(i>0)
-		{
+	// Rebuild the peptide chain base on set of dihedrals from concerted rotations
+	for (int i = 0; i<3; i++) {
+		CAT_add_peptide(
+				p,
+				start+i,
+				gsl_vector_get(bb_out.dihed_angles,i*2),
+				gsl_vector_get(bb_out.bend_angles, i*2),
+				gsl_vector_get(bb_out.dihed_angles,(i*2)+1)
+				);
+	}
+	free_cr_input_data(&bb_in);
+	free_cr_input_data(&bb_out);
+	// recalculate dihedral angles for whole protein
+	for(int i = start-1; i < start+4; i++){
+		if(i>0) {
 			p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
 		}
-		if(i<p->n_res-1)
-		{
+		if(i<p->n_res-1) {
 			p->psi[i]=calc_dihedralf_angle(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
 		}
 	}
-
-	if(p->CB!=NULL)                                                                     // Here we recalculate posiotions of CB atoms if used
-    {
+	// Recalcuate the  positions of CB atoms if used
+	if(p->CB!=NULL) {
 		for(int i=start;i<start+4;i++) {
 			CAT_insert_cbeta(p,i,CAT_Cb_AZIMUTH,CAT_Rbond_CCb);
 		}
@@ -308,18 +363,15 @@ void CATMV_concerted_rot(mc_move_data *ra_data, cat_prot *p, gsl_rng * rng_r, do
 	//save the data about moved pairs
 	k=0;
 	ra_data->N_moved=4;
-	for(int i=0;i<ra_data->N_moved;i++)
-	{
+	for(int i=0;i<ra_data->N_moved;i++) {
 		ra_data->moved_res[i]=start+i;
-		for(int j=0;j<start;j++)
-		{
+		for(int j=0;j<start;j++) {
 			ra_data->mod_pairs[k].i_1=start+i;
 			ra_data->mod_pairs[k].i_2=j;
 			ra_data->mod_pairs[k].dist=-1.0;
 			k++;
 		}
-		for(int j=start+i;j<p->n_res;j++)
-		{
+		for(int j=start+i;j<p->n_res;j++) {
 			ra_data->mod_pairs[k].i_1=start+i;
 			ra_data->mod_pairs[k].i_2=j;
 			ra_data->mod_pairs[k].dist=-1.0;
@@ -331,10 +383,20 @@ void CATMV_concerted_rot(mc_move_data *ra_data, cat_prot *p, gsl_rng * rng_r, do
 	return;
 }
 
-
+/**
+ *
+ * @param[in] 	bb_in  starting configuration (following D-H convention) 
+ * @param[in]   angle  free variable
+ * @param[in]   delta_move size of the proposed displacement along the tangent space in bb_in (in radians).
+ * @param[out]  bb_out new configuration (following D-H convention)
+ *
+ * @return GSL error code with the status of the computation. Returns GSL_SUCCESS
+ * if a valid bb_out was found, some error code otherwise.
+ * @note A rescaling of the step depending on the variable type (length or angle) 
+ * should be considered in general, as specified in <a href="http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0118342">DOI:10.1371/journal.pone.0118342</a>. Here we do not, as we only move angles.
+ */
 int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov)
 {
-	//gsl_vector * T =gsl_vector_alloc(7);
 	double T_ar[7];
 	gsl_vector_view Tv=gsl_vector_view_array(T_ar,7);
 	gsl_vector * T = &Tv.vector;
@@ -342,10 +404,9 @@ int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov
 	//solver
   int status;
   size_t  iter = 0;
-  const size_t n = 6;
+  const size_t n = 6; // dimension of multiroot solver ... how many equations are there
 	const gsl_multiroot_fsolver_type *Ts;
   gsl_multiroot_fsolver *s;
-  //gsl_vector *x = gsl_vector_alloc (n);
 	double x_ar[6];
 	gsl_vector_view x_v=gsl_vector_view_array(x_ar,6);
   gsl_vector *x = &x_v.vector;
@@ -380,7 +441,7 @@ int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov
 		return GSL_FAILURE; //again, I know it is not gsl's fault..
 	}
   //printf ("angle %d status = %s\n",angle, gsl_strerror (status));
-	B=graham_schmidt (T);
+	B=gram_schmidt (T);
 	//parameters
 	//printf("AJJJJJ delta_mov=%lf\n",delta_mov);
 	p.s=delta_mov;
@@ -401,13 +462,12 @@ int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov
   gsl_multiroot_fsolver_set (s, &f, x);
 
   //print_state (iter, s);
-  do
-	{
+  do {
       iter++;
       status = gsl_multiroot_fsolver_iterate (s);
       //print_state (iter, s);
-      if (status)   /* check if solver is stuck */
-			{
+			/* check if solver is stuck */
+      if (status) {
 				//printf ("LEAVING---status = %s. iter %d\n", gsl_strerror (status),iter);
         break;
 			}
@@ -444,14 +504,20 @@ int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov
 		//if parity is violated f and v are now different, by a sign.
 	}
 */
-  //gsl_vector_free (x);
   //gsl_vector_free (p.wspace);
-  //gsl_vector_free (T);
   gsl_multiroot_fsolver_free (s);
   gsl_matrix_free (B);
 	return status;
 }
 
+/**
+ *
+ * @param[in,out]   *x                Solution vector
+ * @param[in,out]   *p                Parameters
+ * @param[in]       *f                Right side vector
+ *
+ * @return GLS error value
+ */
 int T7_solver (const gsl_vector *x, void *p, gsl_vector *f)
 {
 	//get parameters
@@ -487,6 +553,12 @@ int T7_solver (const gsl_vector *x, void *p, gsl_vector *f)
 	return error;
 }
 
+/**
+ * @param[in]        iter             Iteration number
+ * @param[in]       *s                GLS multi root solver
+ *
+ * @return \c void
+ */
 void print_state (int iter, gsl_multiroot_fsolver * s)
 {
   printf ("iter = %3u x = % .3f % .3f % .3f % .3f % .3f % .3f"
@@ -506,13 +578,19 @@ void print_state (int iter, gsl_multiroot_fsolver * s)
           gsl_vector_get (s->f, 5));
 }
 
-
+/**
+ * @param[in]        a                Index to which angle determinant is calculated
+ * @param[in]        bb_in            Current configuration of protein backbone in concerted rotation format
+ *
+ * @return determinant
+ */
 double jac_Det(int a, cr_input_data bb_in)
 {
-	int i;
 	int error, sign;
-	double x,J;
-	double c[7],s[7];
+	double J;
+	//int i;
+	//double x,J;
+	//double c[7],s[7];
 	gsl_matrix *M;
 	gsl_permutation * p = gsl_permutation_alloc (6);
 	switch (a) {
@@ -545,6 +623,14 @@ double jac_Det(int a, cr_input_data bb_in)
 	return J;
 }
 
+/**
+ * @note Parameters set starts with phi angle of first residue defined by c value
+ *
+ * @param[in]       *p                Backbone reprezentation in #cat_prot format
+ * @param[in]        c                Index of first residue to generate input parameters for concerted rotation
+ *
+ * @return parameters for concerted rotation move
+ */
 cr_input_data set_cr_params_phi( cat_prot *p, int c)
 {
 	int
@@ -558,7 +644,7 @@ cr_input_data set_cr_params_phi( cat_prot *p, int c)
 		s[3],
 		d[3];
 
-		cr_input_data 
+		cr_input_data
 			cr_in;
 
 		alloc_cr_input_data(&cr_in);
@@ -620,6 +706,14 @@ cr_input_data set_cr_params_phi( cat_prot *p, int c)
 		return cr_in;
 }
 
+/**
+ * @note Parameters set starts with psi angle of first residue defined by c value
+ *
+ * @param[in]       *p                Backbone reprezentation in #cat_prot format
+ * @param[in]        c                Index of first residue to generate input parameters for concerted rotation
+ *
+ * @return parameters for concerted rotation move
+ */
 cr_input_data set_cr_params_psi( cat_prot *p, int c)
 {
 	int
@@ -633,7 +727,7 @@ cr_input_data set_cr_params_psi( cat_prot *p, int c)
 		s[3],
 		d[3];
 
-		cr_input_data 
+		cr_input_data
 			cr_in;
 
 		alloc_cr_input_data(&cr_in);
@@ -695,6 +789,17 @@ cr_input_data set_cr_params_psi( cat_prot *p, int c)
 		return cr_in;
 }
 
+/**
+ * Takes the initial backbone configuration generated either via #set_cr_params_phi or #set_cr_params_psi and width of normal distribution sigma from where
+ * move size is selected and return modified backbone configuration in concerted rotation format.
+ *
+ * @param[in,out]    bb_out           new D-H backbone configuration 
+ * @param[in,out]    bb_in            starting D-H backbone configuration 
+ * @param[in,out]   *rng_r            State of GLS random generator
+ * @param[in]        sigma            Width of normal distribution used to select the move length along the tangent space
+ *
+ * @return GLS error code
+ */
 int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double sigma)
 {
 	int error,a,i,m;
@@ -708,8 +813,7 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 		i=gsl_rng_uniform_int (rng_r, m);
 		a=angles_idx[i];
 		error=solver(bb_out,bb_in,a,ds);
-		if(error)
-		{
+		if(error) {
 			m--;
 			angles_idx[i]=angles_idx[m];
 		}
@@ -723,8 +827,7 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 	gsl_vector_view delta_xi_v =gsl_vector_view_array(delta_xi_ar,7);
 	gsl_vector *delta_xi=&delta_xi_v.vector;
 	//To be improved..
-	if(error==GSL_SUCCESS)
-	{
+	if(error==GSL_SUCCESS) {
 		double Jo,Jn;
 		Jo=fabs(jac_Det(a,bb_in));
 		m=7;
@@ -756,8 +859,7 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 					status=TmT7_t7(T_xi_new,bb_out);
 					break;
 			}
-			if(status)
-			{
+			if(status) {
 				m--;
 				angles_idx_B[i]=angles_idx_B[m];
 			}
@@ -769,11 +871,9 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 			error = GSL_FAILURE;
 		}
 		//step 2. project the difference xi_old-xi_new
-		if(error==GSL_SUCCESS)
-		{
+		if(error==GSL_SUCCESS) {
 			double w1,w2;
-			for(i=0;i<7;i++)
-			{
+			for(i=0;i<7;i++) {
 				w1=gsl_vector_get(bb_out.dihed_angles,i);
 				w2=gsl_vector_get(bb_in.dihed_angles,i);
 				w1=w2-w1;
@@ -788,7 +888,7 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 			if(acc <1 && gsl_rng_uniform(rng_r)>=acc) //reject the move.
 			{
 				//printf("REJphi ds1 %lf ds %lf diff %lf\n",ds1*ds1,ds*ds,ds*ds-ds1*ds1);
-				error = -100; 
+				error = -100;
 			}
 		}
 	}
