@@ -54,9 +54,6 @@ typedef struct {
 
 // Numerical stability control
 int prot_rescale ( cat_prot *p);
-void print_bond_errors(FILE *stream,cat_prot *p);
-void print_joint_angles_errors(FILE *stream, cat_prot *p);
-void print_omega_errors(FILE *stream, cat_prot *p);
 
 
 mc_traj_data * mc_traj_data_alloc(int seed,double temp);
@@ -104,9 +101,9 @@ int main(int argc, char *argv[])
         if(i>0 && i%1000==0)
         {
             fprintf(stdout,"iteration: %d\n",i);
-            print_bond_errors(stdout,mc_trj->new.p);
-            print_joint_angles_errors(stdout,mc_trj->new.p);
-            print_omega_errors(stdout,mc_trj->new.p);
+            print_bond_errors(stdout,mc_trj->new.p, __FILE__, __LINE__);
+            print_joint_angles_errors(stdout,mc_trj->new.p, __FILE__, __LINE__);
+            print_omega_errors(stdout,mc_trj->new.p, __FILE__, __LINE__);
         }
 
         // rescale which fix numerical inaccuracies introduced in moves and recalculate system energy
@@ -330,76 +327,5 @@ int prot_rescale ( cat_prot *p)
 	return error;
 }
 
-void print_bond_errors(FILE *stream,cat_prot *p)
-{
-    double
-        NCa_bond[3],
-        CaC_bond[3],
-        CN_bond[3],
-        norm_NCa,
-        norm_CaC,
-        norm_CN;
-
-    fprintf(stream,"bonds test:\n");
-    for(int i=0;i<p->n_res;i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            NCa_bond[j] = p->CA[i][j] -p->N [i][j];
-            CaC_bond[j] = p->C [i][j] -p->CA[i][j];
-            if(i<p->n_res-1)
-            {
-                CN_bond[j] = p->N[i+1][j] - p->C[i][j];
-            }
-        }
-        norm_NCa = norm_d(NCa_bond, 3);
-        norm_CaC = norm_d(CaC_bond, 3);
-        norm_CN  = norm_d(CN_bond,  3);
-        if (fabs(norm_NCa-CAT_Rbond_CaN) > BOND_MAX_DEVIATION || fabs(norm_CaC-CAT_Rbond_CCa) > BOND_MAX_DEVIATION || fabs(norm_CN-CAT_Rbond_CN) > BOND_MAX_DEVIATION)
-        {
-            fprintf(stream,"Nca: %g CaC: %g CN: %g\t", fabs(norm_NCa-CAT_Rbond_CaN), fabs(norm_CaC-CAT_Rbond_CCa), fabs(norm_CN-CAT_Rbond_CN));
-        }
-    }
-    fprintf(stream,"\n");
-    fflush(stream);
-}
-
-void print_joint_angles_errors(FILE *stream, cat_prot *p)
-{
-    double
-        angle_CaCN,
-        angle_CNCa;
-
-    fprintf(stream,"joint angles test:\n");
-    for(int i=1;i<p->n_res;i++)
-    {
-        angle_CNCa = angle_ABC( p->C [i-1], p->N[i]  , p->CA[i]);
-        angle_CaCN = angle_ABC( p->CA[i-1], p->C[i-1], p->N [i]);
-        if (fabs(angle_CNCa-CAT_angle_CNCa) > ANGLE_MAX_DEVIATION || fabs(angle_CaCN-CAT_angle_CaCN) > ANGLE_MAX_DEVIATION)
-        {
-            fprintf(stream,"%d CNCa: %g CaCN: %g \t", i,fabs(angle_CNCa-CAT_angle_CNCa), fabs(angle_CaCN-CAT_angle_CaCN));
-        }
-    }
-    fprintf(stream,"\n");
-    fflush(stream);
-}
-void print_omega_errors(FILE *stream, cat_prot *p)
-{
-    double
-        omega;
-
-    fprintf(stream,"omega test:\n");
-    for(int i=1;i<p->n_res;i++)
-    {
-        omega = dihedralangle_ABCD(p->CA[i-1], p->C[i-1], p->N[i], p->CA[i]);
-        omega = gsl_sf_angle_restrict_pos (omega);
-        if (fabs(omega-M_PI) > OMEGA_MAX_DEVIATION)
-        {
-            fprintf(stream,"%g \n", fabs(omega-M_PI));
-        }
-    }
-    fprintf(stream,"\n");
-    fflush(stream);
-}
 
 

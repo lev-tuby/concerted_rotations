@@ -74,9 +74,6 @@ typedef struct {
 //pezzotto per rescale...
 int prot_rescale ( cat_prot *p);
 void rebuild ( cat_prot *p);
-void print_bond_errors(FILE *stream,cat_prot *p);
-int print_joint_angles_errors(FILE *stream, cat_prot *p);
-void print_omega_errors(FILE *stream, cat_prot *p);
 //
 
 
@@ -187,10 +184,10 @@ int main(int argc, char *argv[])
         // geometry check
         if(i>0 && i%1000==0)
         {
-            fprintf(stdout,"%d --\n",i);
-            print_bond_errors(stdout,protein);
-            print_joint_angles_errors(stdout,protein);
-            print_omega_errors(stdout,protein);
+            fprintf(errFile, "%d --\n",i);
+            print_bond_errors(errFile, protein, __FILE__, __LINE__);
+            print_joint_angles_errors(errFile, protein, __FILE__, __LINE__);
+            print_omega_errors(errFile, protein, __FILE__, __LINE__);
         }
 
         // Histogram sampling
@@ -744,64 +741,6 @@ void rebuild(cat_prot *p)
 		CAT_add_peptide(p, i, p->phi[i],M_PI-CAT_angle_NCaC,p->psi[i]);
 	}
 	return;
-}
-
-void print_bond_errors(FILE *stream,cat_prot *p)
-{
-	double NCa_bond[3];
-	double CaC_bond[3];
-	double CN_bond[3];
-	double norm_NCa, norm_CaC, norm_CN;
-	fprintf(stream,"bonds:\n");
-	for(int i=0;i<p->n_res;i++) {
-		for(int j=0;j<3;j++){
-			NCa_bond[j]=p->CA[i][j] -p->N [i][j];
-			CaC_bond[j]=p->C [i][j] -p->CA[i][j];
-			if(i<p->n_res-1) {
-				CN_bond[j] =p->N [i+1][j] -p->C [i][j];
-			}
-		}
-		norm_NCa=norm_d(NCa_bond,3);
-		norm_CaC=norm_d(CaC_bond,3);
-		norm_CN =norm_d(CN_bond,3);
-        if (fabs(norm_NCa-CAT_Rbond_CaN) > 10e-9 || fabs(norm_CaC-CAT_Rbond_CCa) > 10e-9 || fabs(norm_CN-CAT_Rbond_CN) > 10e-9)
-		    fprintf(stream,"Nca: %g CaC: %g CN: %g\t", fabs(norm_NCa-CAT_Rbond_CaN), fabs(norm_CaC-CAT_Rbond_CCa), fabs(norm_CN-CAT_Rbond_CN));
-	}
-	fprintf(stream,"\n");
-	fflush(stream);
-}
-
-int print_joint_angles_errors(FILE *stream, cat_prot *p)
-{
-	double angle_CaCN, angle_CNCa, angle_NCaC;
-    int out=0;
-	fprintf(stream,"joint angles:\n");
-	for(int i=1;i<p->n_res;i++) {
-		angle_CNCa=angle_ABC(p->C[i-1],p->N[i],p->CA[i]);
-		angle_CaCN=angle_ABC(p->CA[i-1],p->C[i-1],p->N[i]);
-        angle_NCaC=angle_ABC(p->N[i], p->CA[i], p->C[i]);
-        if (fabs(angle_CNCa-CAT_angle_CNCa) > 10e-9 || fabs(angle_CaCN-CAT_angle_CaCN) > 10e-9 || fabs(angle_NCaC-CAT_angle_NCaC) > 10e-9){
-		    fprintf(stream,"%d CNCa: %g CaCN: %g NCaC: %g\t", i,fabs(angle_CNCa-CAT_angle_CNCa), fabs(angle_CaCN-CAT_angle_CaCN), fabs(angle_NCaC-CAT_angle_NCaC));
-            out=1;
-        }
-	}
-	fprintf(stream,"\n");
-	fflush(stream);
-    return out;
-}
-void print_omega_errors(FILE *stream, cat_prot *p)
-{
-	double angle_CaCN, angle_CNCa;
-	double omega;
-	fprintf(stream,"omega:\n");
-	for(int i=1;i<p->n_res;i++) {
-		omega=dihedralangle_ABCD(p->CA[i-1],p->C[i-1],p->N[i],p->CA[i]);
-		omega=gsl_sf_angle_restrict_pos (omega);
-        if (fabs(omega-M_PI) > 10e-9)
-		    fprintf(stream,"%g \n", fabs(omega-M_PI));
-	}
-	fprintf(stream,"\n");
-	fflush(stream);
 }
 
 

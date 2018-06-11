@@ -14,6 +14,7 @@
 #include "./geom_prop.h"
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_sf.h> 
 #include "./quaternions.h"
 
 /**
@@ -1424,5 +1425,176 @@ void build_peptide ( gsl_matrix *pep)
 	gsl_matrix_set(pep,0,5,0);
 	gsl_matrix_set(pep,1,5,c*cos(theta));
 	gsl_matrix_set(pep,2,5,c*sin(theta));
+}
+
+/**
+ * @brief Function check bond lengths in protein
+ *
+ * Function iterate through whole protein and cheack each backbone bond length.
+ * If some bond lengths happend to be different from reference functio print
+ * in FILE stream magnitude of errors and index of residue where that error occuered.
+ * If all bond lengths are within MAX_BOND_LENGTH_DEVIATION from equlibrium value
+ * return 0 otherwise 1;
+ * 
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_bond_errors(FILE *stream, const cat_prot *p, char *path, int line)
+{
+    int
+        out=0;
+
+    double
+        norm_NCa,
+        norm_CaC,
+        norm_CN,
+        NCa_bond[3],
+        CaC_bond[3],
+        CN_bond[3];
+
+    fprintf(stream,"bonds:\n");
+
+    for(int i = 0; i < p->n_res; i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            NCa_bond[j] = p->CA[i][j] - p->N [i][j];
+            CaC_bond[j] = p->C [i][j] - p->CA[i][j];
+            if(i < p->n_res-1)
+            {
+                CN_bond[j] = p->N [i+1][j] - p->C [i][j];
+            }
+        }
+
+        norm_NCa = norm_d(NCa_bond, 3);
+        norm_CaC = norm_d(CaC_bond, 3);
+        norm_CN  = norm_d(CN_bond,  3);
+
+        if (
+            fabs(norm_NCa-CAT_Rbond_CaN) > MAX_BOND_LENGHT_DEVIATION ||
+            fabs(norm_CaC-CAT_Rbond_CCa) > MAX_BOND_LENGHT_DEVIATION ||
+            fabs(norm_CN-CAT_Rbond_CN  ) > MAX_BOND_LENGHT_DEVIATION
+            )
+            {
+                fprintf(stream,
+                        "%d Nca: %g CaC: %g CN: %g\t",
+                        i,
+                        fabs(norm_NCa-CAT_Rbond_CaN),
+                        fabs(norm_CaC-CAT_Rbond_CCa),
+                        fabs(norm_CN-CAT_Rbond_CN)
+                        );
+                out=1;
+            }
+    }
+
+    fprintf(stream,"\n");
+    fflush(stream);
+    return out;
+}
+
+/**
+ * @brief Function check bond angles in protein
+ *
+ * Function iterate through whole protein and cheack each backbone bond angle.
+ * If some bond angles happend to be different from reference functio print
+ * in FILE stream magnitude of errors and index of residue where that error occuered.
+ * If all bond angles are within MAX_BOND_ANGLE_DEVIATION from equlibrium value
+ * return 0 otherwise 1;
+ * 
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_joint_angles_errors(FILE *stream, const cat_prot *p, char *path, int line)
+{
+    int
+        out=0;
+
+    double
+        angle_CaCN,
+        angle_CNCa,
+        angle_NCaC;
+
+    fprintf(stream,"joint angles:\n");
+
+    for(int i = 1; i < p->n_res; i++)
+    {
+        angle_CNCa = angle_ABC(p->C [i-1], p->N [i]  , p->CA[i]);
+        angle_CaCN = angle_ABC(p->CA[i-1], p->C [i-1], p->N [i]);
+        angle_NCaC = angle_ABC(p->N [i]  , p->CA[i]  , p->C [i]);
+
+        if (
+            fabs(angle_CNCa-CAT_angle_CNCa) > MAX_BOND_ANGLE_DEVIATION ||
+            fabs(angle_CaCN-CAT_angle_CaCN) > MAX_BOND_ANGLE_DEVIATION ||
+            fabs(angle_NCaC-CAT_angle_NCaC) > MAX_BOND_ANGLE_DEVIATION
+            )
+        {
+            fprintf(stream,
+                    "%d CNCa: %g CaCN: %g NCaC: %g\t",
+                    i,
+                    fabs(angle_CNCa-CAT_angle_CNCa),
+                    fabs(angle_CaCN-CAT_angle_CaCN),
+                    fabs(angle_NCaC-CAT_angle_NCaC)
+                    );
+            out=1;
+        }
+    }
+
+    fprintf(stream,"\n");
+    fflush(stream);
+    return out;
+}
+
+/**
+ * @brief Function check peptide dihedral angle omega in protein
+ *
+ * Function iterate through whole protein and cheack each peptide dihedral.
+ * If omega deviates from planar aligment by more then MAX_BOND_DIHEDRAL_DEVIATION,
+ * magnitude of the error is printed in FILE stream with index of first
+ * residue from residues participating in peptide bond.
+ * If any violation of peptide bond angle appears in protein function return 1
+ * otherwise 0;
+ * 
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_omega_errors(FILE *stream, const cat_prot *p, char *path, int line)
+{
+    int
+        out=0;
+
+    double
+        angle_CaCN,
+        angle_CNCa,
+        omega;
+
+    fprintf(stream,"omega:\n");
+
+    for(int i = 1; i < p->n_res; i++)
+    {
+        omega = dihedralangle_ABCD(p->CA[i-1], p->C[i-1], p->N[i], p->CA[i]);
+        omega = gsl_sf_angle_restrict_pos(omega);
+        if (
+            fabs(omega-M_PI) > MAX_BOND_DIHEDRAL_DEVIATION
+            )
+            {
+                fprintf(stream,"%d %g \n", i, fabs(omega-M_PI));
+                out=1;
+            }
+    }
+    fprintf(stream,"\n");
+    fflush(stream);
+    return out;
 }
 

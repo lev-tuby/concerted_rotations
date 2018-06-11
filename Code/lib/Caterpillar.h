@@ -11,6 +11,9 @@
 #include <stdio.h>
 #include <gsl/gsl_matrix.h>
 
+#define MAX_BOND_LENGHT_DEVIATION 10e-9
+#define MAX_BOND_ANGLE_DEVIATION 10e-9
+#define MAX_BOND_DIHEDRAL_DEVIATION 10e-9
 
 /** @brief Size of alphabet */
 #define CAT_S 21
@@ -262,4 +265,41 @@ void compute_dihedrals(cat_prot *p);
  * @brief Don not know ... Luca?
  */
 void build_peptide ( gsl_matrix *pep);
+
+/**
+ * @brief Function check bond lengths in protein
+ *
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_bond_errors           (FILE *stream, const cat_prot *p, char *path, int line);
+
+/**
+ * @brief Function check bond angles in protein
+ *
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_joint_angles_errors   (FILE *stream, const cat_prot *p, char *path, int line);
+
+/**
+ * @brief Function check peptide dihedral angle omega in protein
+ *
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_omega_errors          (FILE *stream, const cat_prot *p, char *path, int line);
+
 #endif //__CATERPILLAR__
