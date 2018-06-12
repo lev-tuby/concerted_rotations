@@ -21,9 +21,9 @@
 #define ACC 1
 #define REJ 0
 
-#define BENDING_FORCE_CONST 1000.0
-#define BOND_FORCE_CONST 1000.0
-#define DIHEDRAL_FORCE_CONST 1000.0
+#define BENDING_FORCE_CONST 50000.0
+#define BOND_FORCE_CONST 50000.0
+#define DIHEDRAL_FORCE_CONST 50000.0
 
 #define CATENR_CaCa_SPRING 40
 // N H C O CA CB
@@ -93,7 +93,7 @@ void Init_MC(mc_move_data **mvdt, mc_traj_data **mc_traj, energy_par **ep, char 
 
 double protein_energy(const cat_prot *p);
 double overlap_energy(const cat_prot *p);
-inline double spring(const double force_constant, const double equil_val, const double val);
+double spring(const double force_constant, const double equil_val, const double val);
 double bending_energy(const cat_prot *p);
 double bond_energy(const cat_prot *p);
 double dihedral_energy(const cat_prot *p);
@@ -106,11 +106,13 @@ int main(int argc, char *argv[])
     int
         maxIter=10e7,
         k=0,
-        moveResult=0;
+        concerted=0,
+        accepted=0,
+        rejected=0;
 
     double
-        sigma=0.6,
-        beta=0.01,
+        sigma=0.05,
+        beta=1.0,
         *point;
     point = (double*)calloc(2, sizeof(double));
 
@@ -150,7 +152,7 @@ int main(int argc, char *argv[])
         *rng_r;
 
     rng_r=gsl_rng_alloc(gsl_rng_taus2);
-    gsl_rng_set(rng_r,123456789);
+    gsl_rng_set(rng_r,1216);
 
     mc_move_data
         *mv;
@@ -193,12 +195,12 @@ int main(int argc, char *argv[])
         // Histogram sampling
         if(i>10000 && i%50==0)
         {
-            for (size_t resi=1; resi < mc_trj->new.p->n_res-1; resi++)
+            for (size_t resi=1; resi < protein->n_res-1; resi++)
             {
-                point[0]=mc_trj->old.p->psi[resi];
-                point[1]=mc_trj->old.p->phi[resi];
+                point[0]=protein->psi[resi];
+                point[1]=protein->phi[resi];
                 histogram_add(point, psi_phi);
-                fprintf(dihed_out,"%lf %lf  ",mc_trj->new.p->phi[resi],mc_trj->new.p->psi[resi]);
+                fprintf(dihed_out, "%lf %lf  ", protein->phi[resi], protein->psi[resi]);
             }
             fprintf(dihed_out,"\n");
         }
@@ -209,7 +211,8 @@ int main(int argc, char *argv[])
             snprintf(histogramName, sizeof(histogramName), "data_%03.12lf_time_%08i.dat", sigma, i);
             histogram_print(histogramName, "matrix2d", psi_phi);
 
-            CATIO_cat2pdb("prova.pdb","a","--",protein,1);
+            CATIO_cat2pdb("prova.pdb", "a", "--", protein, 1);
+            printf("\n\nAcceptedMoves: %d RejectedMoves: %d\n\n", accepted, rejected);
         }
 
         // MOVES
@@ -217,10 +220,12 @@ int main(int argc, char *argv[])
         {
             CATMV_pivot(mv, test_protein, rng_r, protein->n_res/2);
         } else if (gsl_rng_uniform(mc_trj->rng_r)>0.5) {
-            CATMV_pivot(mv, test_protein, rng_r, protein->n_res/2);
+            CATMV_pivot(mv, test_protein, rng_r, protein->n_res/5);
         } else {
             CATMV_concerted_rot(mv, test_protein, rng_r, sigma);
+            concerted=1;
         }
+
 
         test_E=protein_energy(test_protein);
 
@@ -229,17 +234,24 @@ int main(int argc, char *argv[])
             // Move accepted
             CAT_copy(protein, test_protein);
             E=test_E;
+            if (concerted){
+                accepted += 1;
+            }
         }
         else 
         {
             // Move rejected
             CAT_copy(test_protein, protein);
             test_E=E;
+            if (concerted){
+                rejected += 1;
+            }
         }
+        concerted=0;
 
     } // END MAIN LOOP
 
-//    printf("\n\nAcceptedMoves: %i MovesMade: %i AcceptanceProbability: %f\n\n", moveResult, maxIter, moveResult/maxIter);
+    printf("\n\nAcceptedMoves: %d RejectedMoves: %d\n\n", accepted, rejected);
 
     // Free used memory 
     mc_traj_data_free(mc_trj);
@@ -283,7 +295,7 @@ double overlap_energy(const cat_prot *p)
 					    return e_SAW; 
 				    }
                 }
-                if(0){
+                if(1){
                     e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
                     e_SAW += CATENR_Saw(p->H[i], p->O[j], CATENR_SAW_O_H);
                     if(e_SAW>0) {
@@ -292,7 +304,7 @@ double overlap_energy(const cat_prot *p)
                     }
                 }
 			} else if (i!=j) {
-                if(0){
+                if(1){
 				    e_SAW += CATENR_Saw(p->O[i], p->O[j], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
 				    e_SAW += CATENR_Saw(p->O[j], p->O[i], CATENR_SAW_O_O); // O_{i} - O_{i+1, i-1}
 				    if(e_SAW>0) {
@@ -308,7 +320,7 @@ double overlap_energy(const cat_prot *p)
 					    return e_SAW; 
 				    }
                 }
-                if(0){
+                if(1){
 				    e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
 				    e_SAW += CATENR_Saw(p->H[i], p->O[j], CATENR_SAW_O_H);
 				    if(e_SAW>0) {
@@ -316,8 +328,8 @@ double overlap_energy(const cat_prot *p)
 					    return e_SAW; 
 				    }
                 }
-			} else if (i==j && p->CB!= NULL) {
-                if(0){
+			} else if (i==j) {
+                if(1){
 				    e_SAW += CATENR_Saw(p->O[i], p->H[j], CATENR_SAW_O_H);
 				    e_SAW += CATENR_Saw(p->O[j], p->H[i], CATENR_SAW_O_H);
 				    if(e_SAW>0) {
@@ -331,7 +343,7 @@ double overlap_energy(const cat_prot *p)
     return e_SAW;
 }
 
-inline double spring(const double force_constant, const double equil_val, const double val)
+double spring(const double force_constant, const double equil_val, const double val)
 {
     return force_constant * (equil_val-val) * (equil_val-val);
 }
@@ -661,14 +673,23 @@ void Compute_energy_new(mc_move_data *mvdt,mc_traj_data *mctrj,energy_par *ep)
 
 int metropolis(const double beta, const double E, const double E_new, gsl_rng *rng_r)
 {
-    return ((beta * (E-E_new) ) > gsl_rng_uniform(rng_r)) ? ACC : REJ;
+    double randomVal = gsl_rng_uniform(rng_r);
+//    printf("E: %g | test_E: %g | beta: %g | log(rand): %g | beta*(E-E_new)=%g\n", E, E_new, beta, log(randomVal), (beta * (E-E_new) ));
+    if ((beta * (E-E_new)) > log(randomVal)){
+//        printf("ACC\n");
+        return ACC;
+    }else{
+//        printf("REJ\n");
+        return REJ;
+    }
+//    return ((beta * (E-E_new) ) > log(gsl_rng_uniform(rng_r))) ? ACC : REJ;
 }
 
 int Metropolis( mc_traj_data *mctrj )
 {
 	mctrj->step+=1;
-//	double DE=mctrj->old.E-mctrj->new.E;
-	double DE=Compute_energy(mctrj->old.p)-Compute_energy(mctrj->new.p);
+	double DE=mctrj->old.E-mctrj->new.E;
+//	double DE=Compute_energy(mctrj->old.p)-Compute_energy(mctrj->new.p);
 	double LR=log(gsl_rng_uniform(mctrj->rng_r));
 	//fprintf(stderr,"--Metro: DE = %lf LR = %lf\n",DE,LR);
 	if(mctrj->beta*DE>LR)
