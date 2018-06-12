@@ -13,6 +13,7 @@
 #include "./my_geom.h"
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_sf.h>
 #include "./quaternions.h"
 #include <stddef.h>
 #include <stdlib.h>

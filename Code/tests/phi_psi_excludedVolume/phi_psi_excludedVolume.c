@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_sf.h>
+#include <gsl/gsl_math.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -12,6 +13,7 @@
 #include "../../lib/Caterpillar_energies.h"
 #include "../../lib/my_memory.h"
 #include "../../lib/my_geom.h"
+#include "../../lib/messages.h"
 #include "../../lib/Caterpillar_IO.h"
 #include "../../lib/CAT_moves.h"
 #include "../../lib/quaternions.h"

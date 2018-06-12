@@ -292,20 +292,6 @@ int PDBIO_read_all_atoms (FILE *pdb_in, pdb_atom_list **atoms)
 					 cnt++;
 					 */
 			}
-			else
-			{
-				new_atom->next_atom=(pdb_atom_list*)malloc(sizeof(pdb_atom_list));
-				new_atom=new_atom->next_atom;
-			}
-			pdberr=PDBIO_read_atom(line,&new_atom->values);
-			if(pdberr !=0 )
-			{
-				fprintf(stderr,"failed reading file! error code %d\n",pdberr);
-				return pdberr;
-			}
-			new_atom->next_atom=NULL;
-			cnt++;
-			*/
 		}
 
 		if (*atoms == NULL) {

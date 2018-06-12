@@ -17,6 +17,7 @@
 #include <math.h>
 #include "my_memory.h"
 #include "my_geom.h"
+#include "messages.h"
 #include "../generic_move/CR_precomp.h"
 //#include "Caterpillar_IO.h"
 

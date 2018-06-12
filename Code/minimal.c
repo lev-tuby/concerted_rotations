@@ -323,7 +323,7 @@ int solver(cr_input_data bb_out, cr_input_data bb_in, int angle, double delta_mo
         return GSL_FAILURE; //again, I know it is not gsl's fault..
     }
     // get orthonormalbasis to T manifold
-    B = graham_schmidt (T);
+    B = gram_schmidt (T);
 
     //parameters
     p.s = delta_mov;
