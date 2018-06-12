@@ -153,6 +153,13 @@ void CAT_prot_free ( cat_prot * p)
 	}
 }
 
+/**
+ *
+ * @param[in,out]  *protein        Protein that is translated
+ * @param[in]      *vec            3D translation vector
+ *
+ * @return \c void
+ */
 void CAT_move(cat_prot *p, const double *vec){
     for(int i=0; i<p->n_res;i++)
     {
@@ -186,9 +193,7 @@ void CAT_move(cat_prot *p, const double *vec){
 }
 
 /**
- * @brief Function print in stdout position of all atoms in protein
  *
- * 
  * @param[in]      *protein        Protein whose configuration is printed
  *
  * @return \c void
@@ -1120,7 +1125,6 @@ int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi )
 
 /**
  *
- * 
  * @param[in,out]   *p        Protein whose dihedrals are recalculated
  *
  * @return \c void
@@ -1337,7 +1341,6 @@ void build_peptide ( gsl_matrix *pep)
 }
 
 /**
- * @brief Function check bond lengths in protein
  *
  * Function iterate through whole protein and cheack each backbone bond length.
  * If some bond lengths happend to be different from reference functio print
@@ -1406,7 +1409,6 @@ int print_bond_errors(FILE *stream, const cat_prot *p, char *path, int line)
 }
 
 /**
- * @brief Function check bond angles in protein
  *
  * Function iterate through whole protein and cheack each backbone bond angle.
  * If some bond angles happend to be different from reference functio print
@@ -1462,7 +1464,6 @@ int print_joint_angles_errors(FILE *stream, const cat_prot *p, char *path, int l
 }
 
 /**
- * @brief Function check peptide dihedral angle omega in protein
  *
  * Function iterate through whole protein and cheack each peptide dihedral.
  * If omega deviates from planar aligment by more then MAX_BOND_DIHEDRAL_DEVIATION,
