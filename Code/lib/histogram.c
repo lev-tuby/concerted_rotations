@@ -5,6 +5,11 @@
  * @todo Add methods to save and load histogram in binary and text format
  */
 #include "histogram.h"
+#include "messages.h"
+#include "my_memory.h"
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 /**

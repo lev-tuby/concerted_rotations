@@ -2,7 +2,7 @@
 #define __CATERPILLAR__
 /**
  * @file
- * @brief Function for manipulation of Cterpillar peptide backbone
+ * @brief Interface for the Caterpillar protein model. 
  * @todo Remove deprecated functions and decide which functions will stay or which functions will split etc.
  */
 
@@ -15,7 +15,7 @@
 #define MAX_BOND_ANGLE_DEVIATION 10e-9
 #define MAX_BOND_DIHEDRAL_DEVIATION 10e-9
 
-/** @brief Size of alphabet */
+/** @brief alphabet Size (number of "amino-acid" types in the interaction matrix)*/
 #define CAT_S 21
 
 /** @brief Acceptable residues names
@@ -27,49 +27,53 @@
 	"LYS" ,"LEU", "MET", "ASN", "PRO", "GLN", "ARG", "SER", "THR", "VAL",\
 	"TRP", "TYR","DUM"}
 
-/** @brief Ordered string of one char FASTA code for aminoacids
+/** @brief Ordered string of 1-letter FASTA codes for aminoacids types
  *
- * Residues in the code are stored as int values. Value that coresponds to given one letter code is given in #CAT_AACODE, where number coresponding to n-th one letter code is CAT_AACODE[n].
+ * The corresponding int values used by the code to recognize different
+ * aminoacids are given by the number found in CAT_AACODE at the corresponding 
+ * index.
+ *
 */
 #define CAT_FASTA "ACDEFGHIKLMNPQRSTVWYX" 
 
-/** @brief Array that define decoding of amino acids to number indexes
+/** @brief Array defining the internal integer values corresponding to each 
+ * 1-letter code in CAT_FASTA.
  *
- * Residue types are represented in code by simple int values, where to each one leter FASTA code one number coresponds. Order of fasta codes can be deduced from #CAT_FASTA.
- * 
- * This differ from ivan's fasta decoder. The reason is that it makes it much simpler to assign the code to the letter and viceversa (the num. id. is simplythe index of the letter in the #CAT_FASTA string).
+ * The simplest version is to have the values stored in CAT_AACODE correspond 
+ * with the index: CAT_AACODE[j]=j.
  *
 */
 #define CAT_AACODE {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}
 
 /** @defgroup PDBIO_RETURN_CODES
- *  Indices (order) of atoms in cat_prot structure
+ *  Indices (order) of atoms in the caterpillar data structure `cat_prot`
  *  @{
  */
-/** @brief Index of hydrogen */
+/** @brief Index for hydrogen */
 #define ATOM_H 0
-/** @brief Index of Nitrogen */
+/** @brief Index for Nitrogen */
 #define ATOM_N 1
-/** @brief Index of Ca carbon */
+/** @brief Index for Ca carbon */
 #define ATOM_CA 2
-/** @brief Index of C */
+/** @brief Index for C */
 #define ATOM_C 3
-/** @brief Index of oxygen */
+/** @brief Index for oxygen */
 #define ATOM_O 4
-/** @brief Index of Cb carbon */
+/** @brief Index for Cb carbon */
 #define ATOM_CB 5
 /** @} */ // end of PDBIO_RETURN_CODES
 
 //Atom names
-/** @brief Atom names used in cod
+/** @brief Atom names used in code
  *  @Note Order is not same as one used in code ... in code first atom is N
+ *  @todo CHECK!!
  */
 #define CAT_ATnames {"H","N","CA","C","O","CB"}
 
 /** @brief Number of atoms per residue */
 #define NATOM 6
 
-/** @brief By which we move along nromal to C-CA-N plane in construction of CB atoms */
+/** @brief Height of CB atoms relative to C-CA-N plane  */
 #define CAT_Cb_AZIMUTH 1.2
 
 /** @brief Length of Ca-Cb bond
@@ -106,7 +110,7 @@
 */
 #define CAT_Rbond_CO  1.2300000
 
-/** @brief C=N bond length
+/** @brief C-N bond length
  * sist->Rbond[3]= 1.33000
 */
 #define CAT_Rbond_CN  1.3300000
@@ -117,7 +121,7 @@
 #define CAT_Rbond_NH  1.0000000
 
 /** @brief N-C bond length
- * sist->Rbond[5], used for Bending instead of the angle..
+ * sist->Rbond[5], used for Bending instead of the angle (for backward compatibility with published works).
 */
 #define CAT_Rbond_NC  2.4479800
 
@@ -139,166 +143,131 @@
 /** @} */ // end of Peptide backbone geometric parameters
 
 /**
- * @brief Main structure to store protein configuration
+ * @brief Main data structure for the caterpillar protein model
  *
- * Data structure store coordinates of all atoms in protein, number of residues, torsion angles.
- * Data stracture is used for energy calculation and is altered in moves.
+ * This data structure stores the coordinates of all atoms in the protein, the torsion angles, 
+ * number of contacts, and  type of each residue.
  */
 typedef struct {
-	size_t n_atom_per_res;  /**< Number of atoms per residue (6 if CB included otherwise 5). */
-	size_t n_atoms;         /**< Number of all atoms in protein. */
-	size_t n_res;           /**< Number of all residues in protein. */
-	double **coord;         /**< Array of coordinates of all atoms in protein. */
-	double ** N;            /**< Array slice of coord array where all positions of N atoms are stored. N[i] corespond to N atom in i-th residue. */
-	double **CA;            /**< Array slice of coord array where all positions of Ca atoms are stored. Ca[i] corespond to Ca atom in i-th residue. */
-	double ** C;            /**< Array slice of coord array where all positions of C atoms are stored. C[i] corespond to C atom in i-th residue. */
-	double ** O;            /**< Array slice of coord array where all positions of O atoms are stored. O[i] corespond to O atom in i-th residue. */
-	double ** H;            /**< Array slice of coord array where all positions of H atoms are stored. H[i] corespond to H atom in i-th residue. */
-	double **CB;            /**< Array slice of coord array where all positions of Cb atoms are stored. Cb[i] corespond to Cb atom in i-th residue. */
-	double *phi;            /**< Array of all phi thorsion angles. phi[i] corespond to phi dihedral in i-th residue. */
-	double *psi;            /**< Array of all psi thorsion angles. psi[i] corespond to psi dihedral in i-th residue. */
-	double *contacts;       /**< Number of contacts for each residue. Value is used for wanter contacts energy. */
-	int    *residues;       /**< Array contain residue types of all residues. Values are determined by #CAT_AACODE where translation to nonce letter FASTA code is given in #CAT_FASTA. */
+	size_t n_atom_per_res;  /**< Number of atoms per residue (6 if CB included otherwise 5). See the N_ATOM macro. */
+	size_t n_atoms;         /**< Number of atoms in the protein. */
+	size_t n_res;           /**< Number of residues in the protein. */
+	double **coord;         /**< Array storing all atoms' coordinates. */
+	double ** N;            /**< Slice of coord array storing the coordinates of N atoms. N[i] corresponds to the N atom in the i-th residue. */
+	double **CA;            /**< Slice of coord array storing the coordinates of Ca atoms. Ca[i] corresponds to the Ca atom in the i-th residue. */
+	double ** C;            /**< Slice of coord array storing the coordinates of C atoms. C[i] corresponds to the C atom in the i-th residue. */
+	double ** O;            /**< Slice of coord array storing the coordinates of O atoms. O[i] corresponds to the O atom in the i-th residue. */
+	double ** H;            /**< Slice of coord array storing the coordinates of H atoms. H[i] corresponds to the H atom in the i-th residue. */
+	double **CB;            /**< Slice of coord array storing the coordinates of Cb atoms. Cb[i] corresponds to Cb atom in the i-th residue. */
+	double *phi;            /**< Array storing phi torsion angles. phi[i] corresponds to the phi dihedral in the i-th residue. */
+	double *psi;            /**< Array storing psi torsion angles. psi[i] corresponds to the psi dihedral in the i-th residue. */
+	double *contacts;       /**< Array storing the number of contacts for each residue. This value is used to compute water exposure. */
+	int    *residues;       /**< Array storing all residue types. Values are determined by #CAT_AACODE. Translation to one letter FASTA code is given in #CAT_FASTA. */
 } cat_prot;
 
 /**
- * @brief Function initialize cat_prot strucure
+ * @brief  Allocates and initializes a cat_prot structure
  *
- * All coordinates are set to 0.0, all dihedrals are set to 0.0. p->=n_res*n_atom_per_res, p->n_res=n_res, p->n_atom_per_res=n_atom_per_res, p->residues[i]=-1, p->contacts[i]=-1.0.
- * Atoms are aliased ... it is kind of dangerous though. It remains unclear how optimization is affected inside a function.
  */
 cat_prot * CAT_prot_alloc (size_t n_res, size_t n_atom_per_res);
 
 /**
- * @brief Deallocation of cat_prot structure
+ * @brief Deallocates a cat_prot structure
  */
 void CAT_prot_free (cat_prot * pr);
 
-
+/**
+ * @brief Move whole peptide along vector
+ */
 void CAT_move(cat_prot *p, const double *vec);
 
 
 /**
- * @brief Function print in stdout position of all atoms in protein
+ * @brief Prints atom coordinates on stdout
  */
 void CAT_print(cat_prot *protein);
 
 /**
- * @brief Function build up cat_prot from dihedral angles
+ * @brief Constructs a protein configuration cat_prot from dihedral angles
  *
- * Build a Caterpillar protein, assuming that the first dihedral angle passed through dihed is a phi angle.
  */
 cat_prot * CAT_build_from_dihed ( int n_res, size_t n_atom_per_res, double *orig, double *dihed, char *seq);
 
 /**
- * @brief Function build up liner protein chain
+ * @brief Constructs a liner protein configuration cat_prot
  *
- * Tested OK. LT 02.08.16
+ *
  */
 void CAT_set_prot_linear ( cat_prot * protein, double *orig, double alpha );
-//void CAT_set_residues ( cat_prot * protein, int *Dec);
-
 /**
- * @brief Function set protein residue types from FASTA string
+ * @brief Sets protein residue types from FASTA string
  */
 void CAT_set_residues_fasta ( cat_prot * protein, int Seq_Length, char *Enc);
 
 /**
- * @brief Function add hydrogens to existing peptide backbone
+ * @brief Adds hydrogens to an existing protein backbone
  */
 void CAT_insert_hydrogens ( cat_prot * protein );
 
 /**
- * @brief Function add pozition o CB atom to given residue of protein
+ * @brief Adds a  CB atom to a given residue
  */
 void CAT_insert_cbeta ( cat_prot *protein, int res_i, double azimut, double bond_length	);
 
 /**
- * @brief Function correct backbone distortions
- *
- * Tested OK. 03.08.16. (A shrinked Caterpillar protein is reinflated to itself)
+ * @brief Corrects numerical distortions in a cat_prot backbone
  */
 void CAT_rescale ( cat_prot * protein );
-//void CAT_add_peptide ( cat_prot * protein, int i, double phi, double psi);
-//void CAT_add_peptide ( cat_prot * protein, int I, double phi, double psi, double angle_NCaC);
 
 /**
- * @brief Function modifie residue configuration base on dihedrals
+ * @brief Inserts peptide I based on the angles phi, psi, and alpha (link twist)
  *
- * Function reconstruct given residue based on dihedral angles in cat_prot structure.
- * Function does not change dihedrals in protein phi/psi have to be recalculated.
- * Function do not check if change cause breaking of protein backbone conectivity!
- * Tested OK. LT 02.08.16
  */
 int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi );
 
 /**
- * @brief Function recalculate protein dihedral angles
+ * @brief Computes all dihedral angles
  *
- * Function iterate through whole protein and recalculate p->phi and p->psi.
  */
 void CAT_prot_dihedrals (cat_prot *protein);
 
 /**
- * @brief Function calculate phi angle of residue in protein
+ * @brief Computes the phi dihedral of a given residue c
  */
 double compute_phi(cat_prot *p,int c);
 
 /**
- * @brief Function calculate psi angle of residue in protein
+ * @brief Computes the psi dihedral of a given residue c
  */
 double compute_psi(cat_prot *p,int c);
 
 /**
- * @brief Function recalculate protein dihedral angles
+ * @brief Recomputes all dihedral angles
  *
- * Function iterate through whole protein and recalculate p->phi and p->psi.
  * @todo have to be rewritten
  *
- * @param[in,out]   *p        Protein which dihedrals are recalculated
- *
- * @return \c void
+ * 
  */
 void compute_dihedrals(cat_prot *p);
 
+
 /**
- * @brief Don not know ... Luca?
+ * @brief Builds a caterpillar peptide in a local DH base.
  */
 void build_peptide ( gsl_matrix *pep);
 
 /**
  * @brief Function check bond lengths in protein
- *
- * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
- * @param[in]       *p         Tested protein.
- * @param[in]       *path      Path to file in which error was rised.
- * @param[in]       line       Line number at which error was rised.
- *
- * @return \c int
  */
 int print_bond_errors           (FILE *stream, const cat_prot *p, char *path, int line);
 
 /**
  * @brief Function check bond angles in protein
- *
- * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
- * @param[in]       *p         Tested protein.
- * @param[in]       *path      Path to file in which error was rised.
- * @param[in]       line       Line number at which error was rised.
- *
- * @return \c int
  */
 int print_joint_angles_errors   (FILE *stream, const cat_prot *p, char *path, int line);
 
 /**
  * @brief Function check peptide dihedral angle omega in protein
- *
- * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
- * @param[in]       *p         Tested protein.
- * @param[in]       *path      Path to file in which error was rised.
- * @param[in]       line       Line number at which error was rised.
- *
- * @return \c int
  */
 int print_omega_errors          (FILE *stream, const cat_prot *p, char *path, int line);
 

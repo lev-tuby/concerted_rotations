@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Function for manipulation of Cterpillar peptide backbone
+ * @brief Interface for the Caterpillar protein model. Function's definitions
  * @todo There are some large comented regions which might be good to remove if not relevant anymore.
  * @todo Some functions might still need refinement ... regarding how they are written.
  * @todo CAT_prot_dihedrals and compute_dihedrals does same thing ... I would leave only one ...
@@ -11,23 +11,20 @@
 #include "Caterpillar.h"
 #include "./messages.h"
 #include "./my_geom.h"
-#include "./geom_prop.h"
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
-#include <gsl/gsl_sf.h> 
 #include "./quaternions.h"
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 /**
- * @brief prototypes for internal use
- *
  */
-void build_peptide ( gsl_matrix *pep);
+//void build_peptide ( gsl_matrix *pep);
 
 /**
- * @brief Function initialize cat_prot strucure
- *
  * All coordinates are set to 0.0, all dihedrals are set to 0.0. p->=n_res*n_atom_per_res, p->n_res=n_res, p->n_atom_per_res=n_atom_per_res, p->residues[i]=-1, p->contacts[i]=-1.0.
- * Atoms are aliased ... it is kind of dangerous though. It remains unclear how optimization is affected inside a function.
+ * @todo Atoms are aliased, we need to check optimization risks. 
  * 
  * @param[in]        n_res           Number of residues in peptide
  * @param[in]        n_atom_per_res  Number of atoms in each residue
@@ -129,7 +126,6 @@ cat_prot * CAT_prot_alloc (size_t n_res, size_t n_atom_per_res)
 }
 
 /**
- * @brief Deallocation of cat_prot structure
  *
  * @param[in,out]    *p  cat_prot structure to dealloc
  *
@@ -192,7 +188,7 @@ void CAT_move(cat_prot *p, const double *vec){
  * @brief Function print in stdout position of all atoms in protein
  *
  * 
- * @param[in]      *protein        Protein configuration is printed out
+ * @param[in]      *protein        Protein whose configuration is printed
  *
  * @return \c void
  */
@@ -214,16 +210,13 @@ void CAT_print(cat_prot *protein)
 }
 
 /**
- * @brief Function build up cat_prot from dihedral angles
- *
- * Build a Caterpillar protein, assuming that the first dihedral angle passed through dihed is a phi angle.
- * Function is bit dangerous ... using n_atom_per_res other then 5 or 6 cause silent errors ... check it maybe.
+ * Builds a Caterpillar protein, assuming that the first dihedral angle passed through dihed is a phi angle.
  * 
  * @param[in]        n_res          Number of residues in protein
  * @param[in]        n_atom_per_res Number of atoms in one residue
- * @param[in]       *orig           Position of first atom (so far it is N)
- * @param[in]       *dihed          Array of protein dihedral angles (in radians) starting with phi
- * @param[in]       *seq            Protein sequnce in one letter code
+ * @param[in]       *orig           Position of the first atom (Nitrogen)
+ * @param[in]       *dihed          Array of protein dihedral angles, starting with phi
+ * @param[in]       *seq            Protein sequence (FASTA 1-letter code)
  *
  * @return builded cat_prot
  */
@@ -240,13 +233,9 @@ cat_prot * CAT_build_from_dihed ( int n_res, size_t n_atom_per_res, double *orig
 }
 
 /**
- * @brief Function build up liner protein chain
- *
- * Tested OK. LT 02.08.16
- * 
  * @param[in,out]   *protein        cat_prot structure to be remodeled
  * @param[in]        orig[3]        Starting poinf from where peptide chain is build
- * @param[in]        alpha          Deviation of 
+ * @param[in]        alpha          Deviation from the z axis
  *
  * @return \c void
  */
@@ -338,11 +327,9 @@ void CAT_set_prot_linear ( cat_prot *protein, double orig[3], double alpha )
 }
 
 /**
- * @brief Function set protein residue types from FASTA string
- *
  * 
  * @param[in,out]   *protein        Protein modified to corespond to FASTA sequnce
- * @param[in]        Seq_Length     Number of residues in FASTA formated string (*Enc)
+ * @param[in]        Seq_Length     Number of residues in FASTA formatted string (*Enc)
  * @param[in]       *Enc            String of chars coresponding to FASTA code
  *
  * @return \c void
@@ -368,8 +355,6 @@ void CAT_set_residues_fasta ( cat_prot * protein, int Seq_Length, char *Enc)
 }
 
 /**
- * @brief Function add hydrogens to existing peptide backbone
- *
  * 
  * @param[in,out]   *protein        cat_prot structure to be remodeled
  *
@@ -456,14 +441,12 @@ void CAT_insert_hydrogens ( cat_prot * protein )
 }
 
 /**
- * @brief Function add pozition o CB atom to given residue of protein
- *
  * @todo Check CaCb_versor calculation ... it seems that in the end it is kust -azimut*normal ... and mid part is unimportatnt? since CaCb_versor=-CaCb_versor-azimut*normal???
  *
  * @param[in,out]   *protein        Protein in which CB are added
- * @param[in]        res_i          Residue number to which CB is added
- * @param[in]        azimut         Azimut angle of CB bond
- * @param[in]        bond_length    Length of CA-CB bond
+ * @param[in]        res_i          Residue to which the CB is added
+ * @param[in]        azimut         Azimut angle of CB bond with respect to the C-CA-N plane
+ * @param[in]        bond_length    Length of the CA-CB bond
  *
  * @return \c void
  */
@@ -580,10 +563,6 @@ void CAT_rescale( cat_prot *p)
 */
 
 /**
- * @brief Function correct backbone distortions
- *
- * Tested OK. 03.08.16. (A shrinked Caterpillar protein is reinflated to itself)
- * 
  * @param[in,out]   *protein        cat_prot structure to be remodeled
  *
  * @return \c void
@@ -1018,18 +997,11 @@ void CAT_rescale( cat_prot *protein)
 */
 
 /**
- * @brief Function modifie residue configuration base on dihedrals
- *
- * Function reconstruct given residue based on dihedral angles in cat_prot structure.
- * Function does not change dihedrals in protein phi/psi have to be recalculated.
- * Function do not check if change cause breaking of protein backbone conectivity!
- * Tested OK. LT 02.08.16
- * 
  * @param[in,out]   *p              cat_prot structure to be remodeled
- * @param[in]        I              Residue which atom positions are recalculated
- * @param[in]        phi            PHI angle (in radians) of given residue
- * @param[in]        alpha          Deviation of 
- * @param[in]        psi            PSI angle (in radians) of given residue
+ * @param[in]        I              Residue whose atom positions are recalculated
+ * @param[in]        phi            PHI angle of given residue
+ * @param[in]        alpha          DH link twist
+ * @param[in]        psi            PSI angle of given residue
  *
  * @return err code
  */
@@ -1146,11 +1118,9 @@ int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi )
 }
 
 /**
- * @brief Function recalculate protein dihedral angles
  *
- * Function iterate through whole protein and recalculate p->phi and p->psi.
  * 
- * @param[in,out]   *p        Protein which dihedrals are recalculated
+ * @param[in,out]   *p        Protein whose dihedrals are recalculated
  *
  * @return \c void
  */
@@ -1171,11 +1141,9 @@ void CAT_prot_dihedrals (cat_prot *protein)
 }
 
 /**
- * @brief Function calculate phi angle of residue in protein
  *
- *
- * @param[in]      *p        Protein from where angle is calculated
- * @param[in]       c        Index of atom which dihedral is calculated
+ * @param[in]      *p        Protein
+ * @param[in]       c        Index of the residue whose dihedral is calculated
  *
  * @return phi dihedral angle
  */
@@ -1215,11 +1183,9 @@ double compute_phi(cat_prot *p,int c)
 }
 
 /**
- * @brief Function calculate psi angle of residue in protein
  *
- *
- * @param[in]      *p        Protein from where angle is calculated
- * @param[in]       c        Index of atom which dihedral is calculated
+ * @param[in]      *p        Protein 
+ * @param[in]       c        Index of the residue whose dihedral is calculated
  *
  * @return psi dihedral angle
  */
@@ -1259,12 +1225,7 @@ double compute_psi(cat_prot *p,int c)
 }
 
 /**
- * @brief Function recalculate protein dihedral angles
- *
- * Function iterate through whole protein and recalculate p->phi and p->psi.
- * 
- * @param[in,out]   *p        Protein which dihedrals are recalculated
- *
+ * @param[in,out]   *p        Protein whose dihedrals are recalculated
  * @return \c void
  */
 void compute_dihedrals(cat_prot *p)
@@ -1307,63 +1268,10 @@ void compute_dihedrals(cat_prot *p)
 	}
 }
 
-double calc_dihedralf_angleX(double *atom_1, double *atom_2, double *atom_3, double *atom_4)
-{
-    double
-        dih  = -1.0,
-        * b1 = d1t(3),
-        * b2 = d1t(3),
-        * b3 = d1t(3),
-
-        * n1 = d1t(3),
-        * n2 = d1t(3),
-
-        * m  = d1t(3);
-
-
-    b1[0] = atom_2[0]-atom_1[0];
-    b1[1] = atom_2[1]-atom_1[1];
-    b1[2] = atom_2[2]-atom_1[2];
-    normalize_d(b1, 3);
-
-    b2[0] = atom_3[0]-atom_2[0];
-    b2[1] = atom_3[1]-atom_2[1];
-    b2[2] = atom_3[2]-atom_2[2];
-    normalize_d(b2, 3);
-
-    b3[0] = atom_4[0]-atom_3[0];
-    b3[1] = atom_4[1]-atom_3[1];
-    b3[2] = atom_4[2]-atom_3[2];
-    normalize_d(b3, 3);
-
-    // n1 = b1 x b2
-    vecprod_d (b1, b2, n1);
-    normalize_d(n1, 3);
-
-    // n2 = b2 x b3
-    vecprod_d (b2, b3, n2);
-    normalize_d(n2, 3);
-
-    // m = n1 x b2
-    vecprod_d (n1, b2, m);
-    normalize_d(m, 3);
-    dih = atan2(scal_d(n1, n2, 3), scal_d(m, n2, 3));
-
-    free_d1t(b1);
-    free_d1t(b2);
-    free_d1t(b3);
-    free_d1t(n1);
-    free_d1t(n2);
-    free_d1t(m);
-
-    return dih;
-}
 
 
 /**
- * @brief Don not know ... Luca?
- * * 
- * @param[in,out]   *pep            ???????????????
+ * @param[in,out]   *pep            coordinates of the atoms in the peptide
  *
  * @return \c void
  */
@@ -1597,4 +1505,3 @@ int print_omega_errors(FILE *stream, const cat_prot *p, char *path, int line)
     fflush(stream);
     return out;
 }
-

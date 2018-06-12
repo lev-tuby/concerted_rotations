@@ -6,6 +6,8 @@
  */
 
 #include "CR_precomp.h"
+#include <gsl/gsl_linalg.h>
+#include "../lib/messages.h"
 
 #include <math.h>
 //Tangent vectors function array

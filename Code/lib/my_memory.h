@@ -5,185 +5,183 @@
  * @brief Header file contain functions for memory allocation/deallocation
  */
 
-#include "messages.h"
-#include <stdio.h>
 
-/** @brief Allocation of 1D FILE array */
+/** @brief Allocates 1D array of FILE* pointers. */
 FILE **F2t(int n1);
-/** @brief Allocation of 2D FILE array */
+/** @brief Allocates 2D array of FILE* pointers */
 FILE ***F3t(int n1, int n2);
 
 
-/** @brief Allocation of 1D char array */
+/** @brief Allocates 1D char array */
 char *c1t(int n1);
-/** @brief Allocation of 2D char array */
+/** @brief Allocates 2D char array */
 char **c2t(int n1, int n2);
-/** @brief Allocation of 3D char array */
+/** @brief Allocates 3D char array */
 char ***c3t(int n1, int n2, int n3);
-/** @brief Allocation of 4D char array */
+/** @brief Allocates 4D char array */
 char ****c4t(int n1, int n2, int n3, int n4);
-/** @brief Deallocation of #c4t() */
+/** @brief Deallocates #c4t() */
 void free_c4t(char ****p);
-/** @brief Deallocation of #c3t() */
+/** @brief Deallocates #c3t() */
 void free_c3t(char ***p);
-/** @brief Deallocation of #c2t() */
+/** @brief Deallocates #c2t() */
 void free_c2t(char **p);
-/** @brief Deallocation of #c1t() */
+/** @brief Deallocates #c1t() */
 void free_c1t(char *p);
 
 
-/** @brief Allocation of 1D short array */
+/** @brief Allocates 1D short array */
 short *s1t(int n1);
-/** @brief Allocation of 2D short array */
+/** @brief Allocates 2D short array */
 short **s2t(int n1, int n2);
-/** @brief Allocation of 3D short array */
+/** @brief Allocates 3D short array */
 short ***s3t(int n1, int n2, int n3);
-/** @brief Allocation of 4D short array */
+/** @brief Allocates 4D short array */
 short ****s4t (int n1, int n2, int n3, int n4);
-/** @brief Deallocation of #s4t() */
+/** @brief Deallocates #s4t() */
 void free_s4t(short ****p);
-/** @brief Deallocation of #s3t() */
+/** @brief Deallocates #s3t() */
 void free_s3t(short ***p);
-/** @brief Deallocation of #s2t() */
+/** @brief Deallocates #s2t() */
 void free_s2t(short **p);
-/** @brief Deallocation of #s1t() */
+/** @brief Deallocates #s1t() */
 void free_s1t(short *p);
 
 
-/** @brief Allocation of 1D int array */
+/** @brief Allocates 1D int array */
 int *i1t(int n1);
-/** @brief Allocation of 2D int array */
+/** @brief Allocates 2D int array */
 int **i2t(int n1, int n2);
-/** @brief Allocation of 3D int array */
+/** @brief Allocates 3D int array */
 int ***i3t(int n1, int n2, int n3);
-/** @brief Allocation of 4D int array */
+/** @brief Allocates 4D int array */
 int ****i4t (int n1, int n2, int n3, int n4);
 /** @brief Deallocation of #i4t() */
 void free_i4t(int ****p);
-/** @brief Deallocation of #i3t() */
+/** @brief Deallocates #i3t() */
 void free_i3t(int ***p);
-/** @brief Deallocation of #i2t() */
+/** @brief Deallocates #i2t() */
 void free_i2t(int **p);
-/** @brief Deallocation of #i1t() */
+/** @brief Deallocates #i1t() */
 void free_i1t(int *p);
 
 
-/** @brief Allocation of 1D float array */
+/** @brief Allocates 1D float array */
 float *f1t(int n1);
-/** @brief Allocation of 2D float array */
+/** @brief Allocates 2D float array */
 float **f2t(int n1, int n2);
-/** @brief Allocation of 3D float array */
+/** @brief Allocates 3D float array */
 float ***f3t(int n1, int n2, int n3);
-/** @brief Allocation of 4D float array */
+/** @brief Allocates 4D float array */
 float ****f4t(int n1, int n2, int n3, int n4);
-/** @brief Allocation of 5D float array */
+/** @brief Allocates 5D float array */
 float *****f5t(int n1, int n2, int n3, int n4, int n5);
-/** @brief Deallocation of #f5t() */
+/** @brief Deallocates #f5t() */
 void free_f5t(float *****p);
-/** @brief Deallocation of #f4t() */
+/** @brief Deallocates #f4t() */
 void free_f4t(float ****p);
-/** @brief Deallocation of #f3t() */
+/** @brief Deallocates #f3t() */
 void free_f3t(float ***p);
-/** @brief Deallocation of #f2t() */
+/** @brief Deallocates #f2t() */
 void free_f2t(float **p);
-/** @brief Deallocation of #f1t() */
+/** @brief Deallocates #f1t() */
 void free_f1t(float *p);
 
-/** @brief Allocation of 1D double array */
+/** @brief Allocates 1D double array */
 double *d1t(int n1);
-/** @brief Allocation of 2D double array */
+/** @brief Allocates 2D double array */
 double **d2t(int n1, int n2);
-/** @brief Allocation of 3D double array */
+/** @brief Allocates 3D double array */
 double ***d3t(int n1, int n2, int n3);
-/** @brief Allocation of 4D double array */
+/** @brief Allocates 4D double array */
 double ****d4t(int n1, int n2, int n3, int n4);
-/** @brief Deallocation of #d4t() */
+/** @brief Deallocates #d4t() */
 void free_d4t(double ****p);
-/** @brief Deallocation of #d3t() */
+/** @brief Deallocates #d3t() */
 void free_d3t(double ***p);
-/** @brief Deallocation of #d2t() */
+/** @brief Deallocates #d2t() */
 void free_d2t(double **p);
-/** @brief Deallocation of #d1t() */
+/** @brief Deallocates #d1t() */
 void free_d1t(double *p);
 
 /**
- * @brief Function skip tu end of line in FILE
+ * @brief Skips to end of line in FILE
  */
 void readeol(FILE *fp);
 
 /**
- * @brief Function calculate \f$a^n\f$ for int base
+ * @brief Calculates \f$a^n\f$ for int base
  */
 int myipow(int a, int n);
 /**
- * @brief Function calculate \f$a^n\f$ for float base
+ * @brief Calculates \f$a^n\f$ for float base
  */
 float myfpow(float a, int n);
 /**
- * @brief Function calculate \f$a^n\f$ for double base
+ * @brief Calculates \f$a^n\f$ for double base
  */
 double mydpow(double a, int n);
 
 
 
 /**
- * @brief Print out double array with dimension (n, m)
+ * @brief Prints double array with dimension (n, m) on stdout
  */
 void pdarray(int n, int m, double **a);
 /**
- * @brief Print out double array with dimension (n)
+ * @brief Prints double array with dimension (n) on stdout
  */
 void pdvector(int n, double *a);
 /**
- * @brief Print out float array with dimension (n, m)
+ * @brief Prints float array with dimension (n, m) on stdout
  */
 void pfarray(int n, int m, float **a);
 /**
- * @brief Print out float array with dimension (n)
+ * @brief Prints float array with dimension (n) on stdout
  */
 void pfvector(int n, float *a);
 /**
- * @brief Print out int array with dimension (n, m)
+ * @brief Prints int array with dimension (n, m) on stdout
  */
 void piarray(int n, int m, int **a);
 /**
- * @brief Print out int array with dimension (n)
+ * @brief Prints int array with dimension (n) on stdout
  */
 void pivector(int n, int *a);
 
 
 /**
- * @brief Set all values to zero in double array with dimension(n, m)
+ * @brief Sets all values to zero in double array with dimension(n, m)
  */
 void zdarray(int n, int m, double **a);
 /**
- * @brief Set all values to zero in double array with dimension(n)
+ * @brief Sets all values to zero in double array with dimension(n)
  */
 void zdvector(int n, double *a);
 /**
- * @brief Set all values to zero in float array with dimension(n, m)
+ * @brief Sets all values to zero in float array with dimension(n, m)
  */
 void zfarray(int n, int m, float **a);
 /**
- * @brief Set all values to zero in float array with dimension(n)
+ * @brief Sets all values to zero in float array with dimension(n)
  */
 void zfvector(int n, float *a);
 /**
- * @brief Set all values to zero in int array with dimension(n, m)
+ * @brief Sets all values to zero in int array with dimension(n, m)
  */
 void ziarray(int n, int m, int **a);
 /**
- * @brief Set all values to zero in int array with dimension(n)
+ * @brief Sets all values to zero in int array with dimension(n)
  */
 void zivector(int n, int *a);
 
 // --ADDED LT ---
 /**
- * @brief Function read 2D array of doubles from file
+ * @brief Reads 2D array of doubles from file
  *
- * If function fail to read all numbers end up with #failed().
+ * If the function fails to read all numbers end up with #failed().
  *
- * Function assume that numbers are each on new line.
+ * Assumes that numbers are each on new line.
  * a[0][0] = 1. line
  * a[0][1] = 2. line
  *  ...    = ...
@@ -196,11 +194,11 @@ void zivector(int n, int *a);
 void rdarray			(int n, int m, double **a, FILE *F);
 
 /**
- * @brief Function read 2D diagonaly symmetric array of doubles from file
+ * @brief Reads 2D diagonally symmetric array of doubles from file
  *
- * If function fail to read all numbers end up with #failed().
+ * If the function fails to read all numbers end up with #failed().
  *
- * Function assume that numbers are each on new line.
+ * Assumes that numbers are each on new line.
  * a[0][0] = 1. line
  * a[0][1] = 2. line
  * a[0][2] = 3. line
@@ -218,11 +216,11 @@ void rdarray			(int n, int m, double **a, FILE *F);
 void rdarray_symm (int n, double **a, FILE *F);
 
 /**
- * @brief Function read 1D array of doubles from file
+ * @brief Reads 1D array of doubles from file
  *
- * If function fail to read all numbers end up with #failed().
+ * If the function fails to read all numbers end up with #failed().
  *
- * Function assume that numbers are each on new line.
+ * Assumes that numbers are each on new line.
  * a[0] = 1. line
  * a[1] = 2. line
  * a[2] = 3. line

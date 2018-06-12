@@ -1,9 +1,18 @@
 #define _GNU_SOURCE
 #include "ABM_pdbio.h"
 #include "my_memory.h"
+#include "messages.h"
 #include <string.h>
 #include <ctype.h>
-#include <stdio.h>
+#include <stdlib.h>
+/**
+ * @file
+ * @brief implementation of  functions to read and write PDB files.
+ * @todo Current implementation is pretty slow, improve speed.
+ * @todo Functions for getting different parts of pdb_atom_list are redundant, substitute with a single function.
+ * @todo pdb_atom list might contain number of atoms there ... 
+ */
+
 
 /**
  * @brief Default setings of PDB atom parameters
@@ -25,10 +34,12 @@ const pdb_atom PDBIO_default_atom_entry = {
 /**
  * @brief Function test functions in the PDBIO lib
  *
- * Function test functions by reading data from PDB file and printing them out to other pdb file.
+ * Function test functions by reading data from PDB file and
  *
- * @param[in]       *input_path     Name of file used for printing histogram.
- * @param[in]       *output_path    Constant string that specifies format in which output data are printed.
+ * @param[in]       *input_path     input file name
+ * @param[in]       *output_path    output file name
+ *
+ * @todo err is not checked!!
  *
  * @return PDBIO err code
  */
@@ -88,11 +99,9 @@ int PDBIO_test (const char *input_path, const char *output_path)
 }
 
 /**
- * @brief Function for removing space at the end of string
  *
  * Quite clever trimming loop I've found at http://stackoverflow.com/questions/7775138/strip-whitespace-from-a-string-in-place
  * The termination condition tests that s[i]==NULL and set s[j]=s[i] in one swoop.
- * Tested OK. LT 01.08.16
  *
  * @param[in,out]    *s     Input/Output string without spaces.
  *
@@ -104,34 +113,27 @@ inline void strip_spaces (char *s)
 }
 
 /**
- * @brief Function read one line of pdb and convert it to pdb_atom structure
- *
- * ...
- * Tested OK. LT 02.08.16
  *
  * @param[in]       *line     Line from PDB file
- * @param[out]      *at       pdb_atom structure coresponding to readed line.
+ * @param[out]      *at       pdb_atom structure corresponding to the input line
  *
  * @return PDBIO err code
  */
 int PDBIO_read_atom (char *line, pdb_atom *at)
 {
 	char
-        *s,
-        buff_line[81];
+		*s,
+		buff_line[81];
 
-	if (line == NULL)
-	{
+	if (line == NULL) {
 		return PDBIO_ERROR_EMPTY_LINE;
 	}
 
-    if (strlen(line) < 80)
-	{
+	if (strlen(line) < 80) {
 		return PDBIO_ERROR_SHORT_LINE;
 	}
 
-	if (at == NULL)
-	{
+	if (at == NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 	memset(buff_line, ' ', 80);
@@ -144,27 +146,25 @@ int PDBIO_read_atom (char *line, pdb_atom *at)
 
 	snprintf(buff_line, 80, "%s", line);
 
-	if (buff_line[21] != ' ') //STD behavior: chainID is a letter.
-	{
-        sscanf(buff_line,
-                "%*6c%5d%*c%4c%c"           //1-17
+	if (buff_line[21] != ' ') {
+		//STD behavior: chainID is a letter.
+		sscanf(buff_line,
+				"%*6c%5d%*c%4c%c"           //1-17
 				"%3c %c%4d%c   "            //18-30 (spaces are important!)
 				"%8f%8f%8f"  				//31-54 (coords)
 				"%6f%6f%*10c%2c%2c",
-                &at->serial   , at->name       , &at->altLoc,
+				&at->serial   , at->name       , &at->altLoc,
 				at->resName   , &at->chainID   , &at->resSeq, &at->iCode,
 				&at->x        , &at->y         , &at->z     ,
 				&at->occupancy, &at->tempFactor, at->element, at->charge
-             );
-	}
-	else
-	{
+				);
+	} else {
 		sscanf(buff_line,
-                "%*6c%5d%*c%4c%c"           //1-17
+				"%*6c%5d%*c%4c%c"           //1-17
 				"%3c  %4d%c   "             //18-30 (spaces are important!)
 				"%8f%8f%8f"  				//31-54 (coords)
 				"%6f%6f%*10c%2c%2c",
-                &at->serial   , at->name       , &at->altLoc,
+				&at->serial   , at->name       , &at->altLoc,
 				at->resName   , &at->resSeq    , &at->iCode ,
 				&at->x        , &at->y         , &at->z     ,
 				&at->occupancy, &at->tempFactor, at->element, at->charge);
@@ -180,11 +180,9 @@ int PDBIO_read_atom (char *line, pdb_atom *at)
 }
 
 /**
- * @brief Function read one line of pdb and convert it to pdb_atom structure
  *
  * From http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOMge
  * Alignment of one-letter atom name such as C starts at column 14, while two-letter atom name such as FE starts at column 13.
- * Tested OK. LT 01.08.16
  *
  * @param[in]       *line     Line from PDB file
  * @param[out]      *at       pdb_atom structure coresponding to readed line.
@@ -193,13 +191,11 @@ int PDBIO_read_atom (char *line, pdb_atom *at)
  */
 int PDBIO_write_atom (pdb_atom *at, char *line)
 {
-	if (line == NULL)
-	{
+	if (line == NULL) {
 		return PDBIO_ERROR_EMPTY_LINE;
 	}
 
-	if (!isdigit(at->name[0]) && !isalnum(at->name[3]))
-	{
+	if (!isdigit(at->name[0]) && !isalnum(at->name[3])) {
 		snprintf(line,80,"ATOM  %5d  %-3s%c"    //1-17
 				"%3s %c%4d%c   "    		    //18-30 (space are important!)
 				"%8.3f%8.3f%8.3f"  			    //31-54 (coords)
@@ -211,9 +207,7 @@ int PDBIO_write_atom (pdb_atom *at, char *line)
 				at->occupancy, at->tempFactor,
 				at->element  , at->charge
               );
-	}
-	else
-	{
+	} else {
 		snprintf(line,80,"ATOM  %5d %4s%c"      //1-17
 				"%3s %c%4d%c   "    		    //18-30 (space are important!)
 				"%8.3f%8.3f%8.3f"  			    //31-54 (coords)
@@ -231,9 +225,8 @@ int PDBIO_write_atom (pdb_atom *at, char *line)
 }
 
 /**
- * @brief Function take FILE structure of pdb and read it in pdb_atom_list structure
  *
- * Tested OK. LT 01.08.16 -- NOT VALID ANYMORE
+ * @todo TEST again
  *
  * @param[in]       *pdb_in   FILE in PDB fromat
  * @param[out]      *atoms    pdb_atom_list structure coresponding to PDB file
@@ -243,88 +236,91 @@ int PDBIO_write_atom (pdb_atom *at, char *line)
 int PDBIO_read_all_atoms (FILE *pdb_in, pdb_atom_list **atoms)
 {
 	char
-        line_ID[5],
-        *line;
+		line_ID[5],
+		*line;
 
-	size_t
-        line_len;
+		size_t
+			line_len;
 
-	int
-        err = PDBIO_DEFAULT,
-        cnt = 0;
+		int
+			err = PDBIO_DEFAULT,
+					cnt = 0;
 
-	pdb_atom
-        atom;
+		pdb_atom
+			atom;
 
-	pdb_atom_list
-        *old_atoms      = *atoms,
-        *tmp_atoms      = NULL,
-        *tmp_atoms_tail = NULL;
+		pdb_atom_list
+			*old_atoms      = *atoms,
+			*tmp_atoms      = NULL,
+			*tmp_atoms_tail = NULL;
 
-	//pdb_atom_list *new_atom;
-	if (pdb_in == NULL)
-	{
-		return PDBIO_ERROR_NULL_PTR;
-	}
+		//pdb_atom_list *new_atom;
+		if (pdb_in == NULL) {
+			return PDBIO_ERROR_NULL_PTR;
+		}
 
-	line = (char*)malloc(2048*sizeof(char));
-	while (getline(&line, &line_len, pdb_in) != -1)
-	{
-		strncpy(line_ID, line, 4);
-		line_ID[4] = '\0';
-		if (strncmp(line_ID, "ATOM", 4) == 0)
-		{
-			err = PDBIO_read_atom(line, &atom);
-			PDBIO_atomlist_append(&tmp_atoms_tail, atom);
-			if (NULL == tmp_atoms)
-            {
-                tmp_atoms = tmp_atoms_tail;
-            }
-			cnt++;
+		line = (char*)malloc(2048*sizeof(char));
+		while (getline(&line, &line_len, pdb_in) != -1) {
+			strncpy(line_ID, line, 4);
+			line_ID[4] = '\0';
+			if (strncmp(line_ID, "ATOM", 4) == 0) {
+				err = PDBIO_read_atom(line, &atom);
+				PDBIO_atomlist_append(&tmp_atoms_tail, atom);
+				if (NULL == tmp_atoms) {
+					tmp_atoms = tmp_atoms_tail;
+				}
+				cnt++;
 
-			/*
-			if(cnt==0)
-			{
-				tmp_atoms=(pdb_atom_list*)malloc(sizeof(pdb_atom_list));
-				new_atom=tmp_atoms;
+				/*
+					 if(cnt==0)
+					 {
+					 tmp_atoms=(pdb_atom_list*)malloc(sizeof(pdb_atom_list));
+					 new_atom=tmp_atoms;
+					 }
+					 else
+					 {
+					 new_atom->next_atom=(pdb_atom_list*)malloc(sizeof(pdb_atom_list));
+					 new_atom=new_atom->next_atom;
+					 }
+					 err=PDBIO_read_atom(line,&new_atom->values);
+					 if(err !=0 )
+					 {
+					 fprintf(stderr,"failed reading file! error code %d\n",err);
+					 return err;
+					 }
+					 new_atom->next_atom=NULL;
+					 cnt++;
+					 */
 			}
 			else
 			{
 				new_atom->next_atom=(pdb_atom_list*)malloc(sizeof(pdb_atom_list));
 				new_atom=new_atom->next_atom;
 			}
-			err=PDBIO_read_atom(line,&new_atom->values);
-			if(err !=0 )
+			pdberr=PDBIO_read_atom(line,&new_atom->values);
+			if(pdberr !=0 )
 			{
-				fprintf(stderr,"failed reading file! error code %d\n",err);
-				return err;
+				fprintf(stderr,"failed reading file! error code %d\n",pdberr);
+				return pdberr;
 			}
 			new_atom->next_atom=NULL;
 			cnt++;
 			*/
 		}
-	}
 
-	if (*atoms == NULL)
-	{
-		*atoms = tmp_atoms;
-	}
-	else if ((*atoms)->next_atom != NULL )
-	{
-		return PDBIO_ERROR_OVERWRITE;
-	}
-	else
-	{
-		(*atoms)->next_atom = tmp_atoms;
-	}
-	free(line);
-	return PDBIO_SUCCESS;
+		if (*atoms == NULL) {
+			*atoms = tmp_atoms;
+		} else if ((*atoms)->next_atom != NULL ) {
+			return PDBIO_ERROR_OVERWRITE;
+		} else {
+			(*atoms)->next_atom = tmp_atoms;
+		}
+		free(line);
+		return PDBIO_SUCCESS;
 }
 
 /**
- * @brief Function take FILE structure of output pdb and print content of pdb_atom_list structure
  *
- * Tested OK. LT 01.08.16
  *
  * @param[in]       *atoms    pdb_atom_list structure of atoms in PDB
  * @param[out]      *pdb_out  Output PDB FILE
@@ -344,11 +340,9 @@ int PDBIO_write_all_atoms (FILE *pdb_out, pdb_atom_list *atoms)
 
 	//new_atom=atoms;
 	//while( new_atom!=NULL)
-	for(new_atom = atoms; new_atom; new_atom = new_atom->next_atom)
-	{
+	for(new_atom = atoms; new_atom; new_atom = new_atom->next_atom) {
 		err = PDBIO_write_atom(&new_atom->values, line);
-		if (err !=0 )
-		{
+		if (err !=0 ) {
 			return err;
 		}
 		fprintf(pdb_out, "%s\n", line);
@@ -359,9 +353,6 @@ int PDBIO_write_all_atoms (FILE *pdb_out, pdb_atom_list *atoms)
 }
 
 /**
- * @brief Function push a new element on top of the list in the pdb_atom_list structure
- *
- * NOT TESTED
  *
  * @param[in]        el       New element added to stack
  * @param[in,out]  **head     Top of stack of pdb_atom_list
@@ -370,11 +361,10 @@ int PDBIO_write_all_atoms (FILE *pdb_out, pdb_atom_list *atoms)
  */
 void PDBIO_atomlist_push (pdb_atom_list **head, pdb_atom el)
 {
-	pdb_atom_list 
+	pdb_atom_list
         *l = (pdb_atom_list *)malloc(sizeof(pdb_atom_list));
 
-	if (l == NULL)
-	{
+	if (l == NULL) {
 		failed("In Function PDBIO_push. Failed to allocate memory in push.ABORT");
 	}
 
@@ -382,8 +372,7 @@ void PDBIO_atomlist_push (pdb_atom_list **head, pdb_atom el)
 	l->prev_atom = NULL;
 	l->next_atom = *head;
 
-	if (NULL != *head)
-	{
+	if (NULL != *head) {
 		(*head)->prev_atom = l;
 	}
 
@@ -391,9 +380,7 @@ void PDBIO_atomlist_push (pdb_atom_list **head, pdb_atom el)
 }
 
 /**
- * @brief Function recover top element from the list in the pdb_atom_list structure
  *
- * NOT TESTED
  *
  * @param[in,out]  **head     Top of stack of pdb_atom_list
  * @param[out]       el       New element added to stack
@@ -402,27 +389,24 @@ void PDBIO_atomlist_push (pdb_atom_list **head, pdb_atom el)
  */
 void PDBIO_atomlist_pop (pdb_atom_list **head, pdb_atom *el)
 {
-    pdb_atom_list 
-        *l;
+	pdb_atom_list
+		*l;
 
-    if ( *head == NULL )
-    {
-        fprintf(stderr,"In function PDBIO_atomlist_pop.\n Trying to pop an empty stack.\nABORT\n");
-        exit(1);
-    }
+	if ( *head == NULL ) {
+		fprintf(stderr,"In function PDBIO_atomlist_pop.\n Trying to pop an empty stack.\nABORT\n");
+		exit(1);
+	}
 
-    l                  = *head;
-    *el                = l->values;
-    *head              = l->next_atom;
+	l                  = *head;
+	*el                = l->values;
+	*head              = l->next_atom;
 	(*head)->prev_atom = NULL;
 
-    free(l);
+	free(l);
 }
 
 /**
- * @brief Function append new element to the end of the list in pdb_atom_list structure
  *
- * NOT TESTED
  *
  * @param[in]        el       New element added to stack
  * @param[in,out]  **tail     Top of stack of pdb_atom_list
@@ -431,24 +415,20 @@ void PDBIO_atomlist_pop (pdb_atom_list **head, pdb_atom *el)
  */
 void PDBIO_atomlist_append (pdb_atom_list **tail, pdb_atom el)
 {
-	pdb_atom_list 
+	pdb_atom_list
         *l = (pdb_atom_list*)malloc(sizeof(pdb_atom_list));
 
-	if (l == NULL)
-	{
+	if (l == NULL) {
 		failed("In Function PDBIO_append. Failed to allocate memory in append.ABORT");
 	}
 
 	l->values    = el;
 	l->next_atom = NULL;
 
-	if (NULL == *tail)
-	{
+	if (NULL == *tail) {
 		l->prev_atom = NULL;
 		*tail        = l;
-	}
-	else
-	{
+	} else {
 		(*tail)->next_atom = l;
 		l->prev_atom       = *tail;
 		*tail              = l;
@@ -456,9 +436,6 @@ void PDBIO_atomlist_append (pdb_atom_list **tail, pdb_atom el)
 }
 
 /**
- * @brief Function remove element from the list in pdb_atom_list structure
- *
- * NOT TESTED
  *
  * @param[in]       *obj      Element that to be removed
  * @param[in,out]  **head     Top of the list
@@ -471,18 +448,14 @@ void PDBIO_atomlist_remove (pdb_atom_list **head, pdb_atom_list *obj)
         *pp,
         *pn;
 
-	if (*head == obj)
-	{
+	if (*head == obj) {
 		*head              = obj->next_atom;
 		(*head)->prev_atom = NULL;
-	}
-	else
-	{
+	} else {
 		pp            = obj->prev_atom;
 		pn            = obj->next_atom;
 		pp->next_atom = pn;
-		if (NULL != pn)
-		{
+		if (NULL != pn) {
 			pn->prev_atom = pp;
 		}
 		free(obj);
@@ -490,47 +463,42 @@ void PDBIO_atomlist_remove (pdb_atom_list **head, pdb_atom_list *obj)
 }
 
 /**
- * @brief Function return number and coordinates from the pdb_atom_list structure
  *
- * Function iterate through whole pdb_atom_list and count and store PDB coordinates in d2t(N, 3) array
- * Note: should be able to doo whole stuff in one for cycle ... also i variable is not used ...
- * Tested OK. LT 01.08.16
+ * Iterates through a #_pdb_atom_list counting and storing PDB coordinates in a #d2t (N, 3) array
+ * @note should be able to do everythin in one for cycle ... also  variable i is not used ...
  *
- * @param[in]       *atoms    pdb_atom_list pdb data
- * @param[out]      *N_at     Number of atoms in PDB and number of items in coord d2t(N_at, 3) array
- * @param[out]    ***coord    Coordinates of atoms in pdb_atom_list structure in format d2t(N_at, 3) array
+ * @param[in]       *atoms    #pdb_atom_list pdb data
+ * @param[out]      *N_at     Number of atoms in PDB and number of items in the coord 2d array
+ * @param[out]    ***coord    Coordinates of atoms in #pdb_atom_list structure as a #d2t (N_at, 3) array
  *
  * @return PDBIO err code
  */
 int PDBIO_atomlist_get_coord (pdb_atom_list *atoms, int *N_at, double ***coord)
 {
 	int
-        N,
-        i;
+		N,
+		i;
 
 	double
-        **c;
+		**c;
 
 	pdb_atom_list
-        *new_atom;
+		*new_atom;
 
-	if (*coord != NULL)
-	{
+	if (*coord != NULL) {
 		return PDBIO_ERROR_OVERWRITE;
 	}
-	if (N_at == NULL || atoms == NULL)
-	{
+	if (N_at == NULL || atoms == NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 
-    N     = 0;
+	N     = 0;
 	for(new_atom = atoms; new_atom; new_atom = new_atom->next_atom) {N++;}
 	*N_at = N;
 	c     = d2t(N, 3);
 
-    i = 0;
-	for(new_atom = atoms; new_atom; new_atom = new_atom->next_atom) 
-	{
+	i = 0;
+	for(new_atom = atoms; new_atom; new_atom = new_atom->next_atom) {
 		c[i][0] = new_atom->values.x;
 		c[i][1] = new_atom->values.y;
 		c[i][2] = new_atom->values.z;
@@ -542,11 +510,6 @@ int PDBIO_atomlist_get_coord (pdb_atom_list *atoms, int *N_at, double ***coord)
 }
 
 /**
- * @brief Function return ordered array of atom indexes in pdb_atom_list
- *
- * Function iterate through whole pdb_atom_list and read array of int values of atom indexes for each atom in pdb_atom_list.
- * Function do not reorder values in any way.
- * Tested OK. LT 01.08.16
  *
  * @param[in]       *atoms    pdb_atom_list pdb data
  * @param[out]      *N_at     Number of atoms in PDB and number of items in serials i1t(N_at) array
@@ -564,12 +527,10 @@ int PDBIO_atomlist_get_serials (pdb_atom_list *atoms, int *N_at, int **serials)
 	pdb_atom_list
         *new_atom;
 
-	if (*serials != NULL)
-	{
+	if (*serials != NULL) {
 		return PDBIO_ERROR_OVERWRITE;
 	}
-	if (N_at ==NULL || atoms==NULL)
-	{
+	if (N_at ==NULL || atoms==NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 
@@ -579,8 +540,7 @@ int PDBIO_atomlist_get_serials (pdb_atom_list *atoms, int *N_at, int **serials)
 	s     = i1t(N);
 
     i = 0;
-	for(new_atom=atoms; new_atom; new_atom = new_atom->next_atom) 
-	{
+	for(new_atom=atoms; new_atom; new_atom = new_atom->next_atom) {
 		s[i] = new_atom->values.serial;
 		i++;
 	}
@@ -590,11 +550,6 @@ int PDBIO_atomlist_get_serials (pdb_atom_list *atoms, int *N_at, int **serials)
 }
 
 /**
- * @brief Function return ordered array of atom names in pdb_atom_list
- *
- * Function iterate through whole pdb_atom_list and read array of *char of atom names for each atom in pdb_atom_list.
- * Function do not reorder values in any way.
- * Tested OK. LT 01.08.16
  *
  * @param[in]       *atoms    pdb_atom_list pdb data structure
  * @param[out]      *N_at     Number of atoms in PDB and number of atom names in c2t(N_at, 5) array
@@ -614,13 +569,11 @@ int PDBIO_atomlist_get_names (pdb_atom_list *atoms, int *N_at, char ***names)
 	char
         **n;
 
-	if (*names != NULL)
-	{
+	if (*names != NULL) {
 		return PDBIO_ERROR_OVERWRITE;
 	}
 
-	if (N_at ==NULL || atoms==NULL)
-	{
+	if (N_at ==NULL || atoms==NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 
@@ -630,8 +583,7 @@ int PDBIO_atomlist_get_names (pdb_atom_list *atoms, int *N_at, char ***names)
 	n     = c2t(N, 5);
 
 	i = 0;
-	for(new_atom=atoms; new_atom; new_atom = new_atom->next_atom) 
-	{
+	for(new_atom=atoms; new_atom; new_atom = new_atom->next_atom) {
 		strncpy(n[i], new_atom->values.name, 5);
 		i++;
 	}
@@ -641,11 +593,7 @@ int PDBIO_atomlist_get_names (pdb_atom_list *atoms, int *N_at, char ***names)
 }
 
 /**
- * @brief Function return ordered array of residue names in pdb_atom_list
  *
- * Function iterate through whole pdb_atom_list and read array of *char of residue names for <b>each atom</b> in pdb_atom_list.
- * Function do not reorder values in any way.
- * Tested OK. LT 01.08.16
  *
  * @param[in]       *atoms    pdb_atom_list pdb data
  * @param[out]      *N_at     Number of atoms in PDB and number of items in serials c2t(N_at, 4) array
@@ -665,13 +613,11 @@ int PDBIO_atomlist_get_resNames (pdb_atom_list *atoms, int *N_at, char ***resNam
 	pdb_atom_list
         *new_atom;
 
-	if (*resNames != NULL)
-	{
+	if (*resNames != NULL) {
 		return PDBIO_ERROR_OVERWRITE;
 	}
 
-	if (N_at ==NULL || atoms==NULL)
-	{
+	if (N_at ==NULL || atoms==NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 
@@ -681,8 +627,7 @@ int PDBIO_atomlist_get_resNames (pdb_atom_list *atoms, int *N_at, char ***resNam
 	r     = c2t(N,4);
 
 	i = 0;
-	for(new_atom = atoms; new_atom; new_atom = new_atom->next_atom) 
-	{
+	for(new_atom = atoms; new_atom; new_atom = new_atom->next_atom) {
 		strncpy(r[i], new_atom->values.resName, 4);
 		i++;
 	}
@@ -692,11 +637,7 @@ int PDBIO_atomlist_get_resNames (pdb_atom_list *atoms, int *N_at, char ***resNam
 }
 
 /**
- * @brief Function return ordered array of altLocs in pdb_atom_list
  *
- * Function iterate through whole pdb_atom_list and read array of char of altLocs for <b>each atom</b> in pdb_atom_list.
- * Function do not reorder values in any way.
- * Tested OK. LT 01.08.16
  *
  * @param[in]       *atoms    pdb_atom_list pdb data
  * @param[out]      *N_at     Number of atoms in PDB and number of items in altLocs c1t(N_at) array
@@ -716,13 +657,11 @@ int PDBIO_atomlist_get_altLoc (pdb_atom_list *atoms, int *N_at, char **altLocs)
 	pdb_atom_list
         *new_atom;
 
-	if (*altLocs != NULL)
-	{
+	if (*altLocs != NULL) {
 		return PDBIO_ERROR_OVERWRITE;
 	}
 
-	if (N_at == NULL || atoms == NULL)
-	{
+	if (N_at == NULL || atoms == NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 
@@ -732,8 +671,7 @@ int PDBIO_atomlist_get_altLoc (pdb_atom_list *atoms, int *N_at, char **altLocs)
 	a     = c1t(N);
 
 	i = 0;
-	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) 
-	{
+	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) {
 		a[i] = new_atom->values.altLoc;
 		i++;
 	}
@@ -743,11 +681,7 @@ int PDBIO_atomlist_get_altLoc (pdb_atom_list *atoms, int *N_at, char **altLocs)
 }
 
 /**
- * @brief Function return ordered array of residue numbers in pdb_atom_list
  *
- * Function iterate through whole pdb_atom_list and read array of int of residue numbers for <b>each atom</b> in pdb_atom_list.
- * Function do not reorder values in any way.
- * Tested OK. LT 01.08.16
  *
  * @param[in]       *atoms    pdb_atom_list pdb data
  * @param[out]      *N_at     Number of atoms in PDB and number of items in resSeqs i1t(N_at) array
@@ -765,12 +699,10 @@ int PDBIO_atomlist_get_resSeq ( pdb_atom_list *atoms, int *N_at, int **resSeqs)
 	pdb_atom_list
         *new_atom;
 
-	if (*resSeqs != NULL)
-	{
+	if (*resSeqs != NULL) {
 		return PDBIO_ERROR_OVERWRITE;
 	}
-	if (N_at == NULL || atoms == NULL)
-	{
+	if (N_at == NULL || atoms == NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 
@@ -780,8 +712,7 @@ int PDBIO_atomlist_get_resSeq ( pdb_atom_list *atoms, int *N_at, int **resSeqs)
 	r     = i1t(N);
 
 	i = 0;
-	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) 
-	{
+	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) {
 		r[i] = new_atom->values.resSeq;
 		i++;
 	}
@@ -791,10 +722,6 @@ int PDBIO_atomlist_get_resSeq ( pdb_atom_list *atoms, int *N_at, int **resSeqs)
 }
 
 /**
- * @brief Function return ordered array of ocupancies in pdb_atom_list
- *
- * Function iterate through whole pdb_atom_list and read array of doubles of ocupancies for <b>each atom</b> in pdb_atom_list.
- * Function do not reorder values in any way.
  *
  * @param[in]       *atoms        pdb_atom_list pdb data
  * @param[out]      *N_at         Number of atoms in PDB and number of items in ocupancies d1t(N_at) array
@@ -814,12 +741,10 @@ int PDBIO_atomlist_get_occupancy (pdb_atom_list *atoms, int *N_at, double **occu
 	pdb_atom_list
         *new_atom;
 
-	if (*occupancies != NULL)
-	{
+	if (*occupancies != NULL) {
 		return PDBIO_ERROR_OVERWRITE;
 	}
-	if (N_at == NULL || atoms==NULL)
-	{
+	if (N_at == NULL || atoms==NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 
@@ -829,8 +754,7 @@ int PDBIO_atomlist_get_occupancy (pdb_atom_list *atoms, int *N_at, double **occu
 	o=d1t(N);
 
 	i=0;
-	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) 
-	{
+	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) {
 		o[i]=new_atom->values.occupancy;
 		i++;
 	}
@@ -840,10 +764,6 @@ int PDBIO_atomlist_get_occupancy (pdb_atom_list *atoms, int *N_at, double **occu
 }
 
 /**
- * @brief Function return ordered array of temperature factors in pdb_atom_list
- *
- * Function iterate through whole pdb_atom_list and read array of doubles of temperature factors for <b>each atom</b> in pdb_atom_list.
- * Function do not reorder values in any way.
  *
  * @param[in]       *atoms        pdb_atom_list pdb data
  * @param[out]      *N_at         Number of atoms in PDB and number of items in ocupancies d1t(N_at) array
@@ -863,13 +783,11 @@ int PDBIO_atomlist_get_tempFactor (pdb_atom_list *atoms, int *N_at, double **tem
 	pdb_atom_list
         *new_atom;
 
-	if (*tempFactors!= NULL)
-	{
+	if (*tempFactors!= NULL) {
 		return PDBIO_ERROR_OVERWRITE;
 	}
 
-	if (N_at ==NULL || atoms==NULL)
-	{
+	if (N_at ==NULL || atoms==NULL) {
 		return PDBIO_ERROR_NULL_PTR;
 	}
 
@@ -879,7 +797,7 @@ int PDBIO_atomlist_get_tempFactor (pdb_atom_list *atoms, int *N_at, double **tem
 	tF=d1t(N);
 
 	i=0;
-	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) 
+	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom)
 	{
 		tF[i]=new_atom->values.occupancy;
 		i++;
@@ -889,43 +807,13 @@ int PDBIO_atomlist_get_tempFactor (pdb_atom_list *atoms, int *N_at, double **tem
 	return PDBIO_SUCCESS;
 }
 
-/*int PDBIO_atomlist2coord (  pdb_atom_list *atoms, pdb_atom *chain_prop,int **serial,char ***name, char **altLoc, char ***resName, int **resSeq, int *N_at, double ***coord)
-{
-	pdb_atom_list *new_atom;
-	int N;
-	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) { N++;}
-	coord=d2t(N,3);
-	at_names=c2t(N,5);
-	resNames=c2t(N,4);
-	serials=i1t(N);
-	resSeqs=i1t(N);
-	altLocs=c1t(N);
-	int i=0;
-	for(new_atom=atoms;new_atom;new_atom=new_atom->next_atom) 
-	{
-		coord[i][0]=new_atom->values.x;
-		coord[i][1]=new_atom->values.y;
-		coord[i][2]=new_atom->values.z;
-		strncpy(at_names[i],new_atom->values.name,5);
-		strncpy(resNames[i],new_atom->values.resName,4);
-		serials[i]=new_atom->values.serial;
-		altLocs[i]=new_atom->values.altLoc;
-		resSeqs[i]=new_atom->values.resSeq;
-		i++;
-	}
-}*/
 
 /**
- * @brief Function take ordered array of atom parameters and fill them in pdb_atom_list structure
  *
- * Function take separate arraies for each column in pdb (coordinates, atom index, atom name, residue name etc.) and fill them in pdb_atom_list.
- * If data for alternative location are not supplied (*altLoc==NULL), then empty space is leaved in pdb.
- * If data for atom indices are not supplied (*serial==NULL), then atoms are numbered from 1.
- * Tested OK. LT 01.08.16
+ * Takes separate arrays for each column in the pdb format (coordinates, atom index, atom name, residue name etc.) and fill them in pdb_atom_list.
  *
- * Note: parameters in all <b>arraies have to be ordered</b>.
- * TODO: Only existence of coord is tested but not of other input arrays.
- *       What is the purpose of chain_prop? it is nor really used ...
+ *
+ * @todo Only the existence of coord is tested but not of other input arrays.
  *
  * @param[in]      **coord        Array of coordinates in fromate d2t(N_at, 3)
  * @param[in]       *serial       Array of atom indices in format i1t(N_at)
@@ -934,7 +822,7 @@ int PDBIO_atomlist_get_tempFactor (pdb_atom_list *atoms, int *N_at, double **tem
  * @param[in]      **resName      Array of residue names in fromate c2t(N_at, 4)
  * @param[in]       *resSeq       Array of residue numbers i1t(N_at)
  * @param[in]        N_at         Number of atoms
- * @param[in]        chain_prop   ???
+ * @param[in]        chain_prop   Predefined properties for the whole chain
  * @param[out]     **atoms        pdb_atom_list structure to which data are written
  *
  * @return PDBIO err code

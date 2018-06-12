@@ -1,17 +1,12 @@
 #ifndef __HISTOGRAM__
 #define __HISTOGRAM__
+#include <stdio.h>
 /**
  * @file
  * @brief Header file for all functions for work with histogram structure
  * Well not much else to say ...
  */
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include "my_memory.h"
-#include "messages.h"
 
 /** @brief Maximal value of histogram dimensions used in initialization of histogram structure. */
 #define MAX_HISTOGRAM_DIMENSION 8

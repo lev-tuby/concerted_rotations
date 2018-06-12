@@ -52,13 +52,12 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov);
 double jac_Det(int a, cr_input_data bb_in);
 int T7_solver (const gsl_vector *x, void *p, gsl_vector *f);
-gsl_matrix * graham_schmidt ( gsl_vector *v);
+gsl_matrix * gram_schmidt ( gsl_vector *v);
 
 
 // DO NOT FORGET TO INCLUDE ALSO message.[c,h] due to usage in CR_precomp.[c,h] !!!
 
 gsl_rng *rng_r;
-
 int main(int argc, char *argv[])
 {
 	int
@@ -207,7 +206,6 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 			angles_idx[i]=angles_idx[m];
 		}
 	}while(m && error!=GSL_SUCCESS);
-
 	//Work out the correct acceptance
 	double ds1;
 	double xi_new_ar[MOVE_LENGHTH];
@@ -272,10 +270,6 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 	}
 	return error;
 }
-
-
-
-
 
 
 int solver(cr_input_data bb_out, cr_input_data bb_in, int angle, double delta_mov)
@@ -405,12 +399,12 @@ int T7_solver (const gsl_vector *x, void *p, gsl_vector *f)
 	gsl_vector *an  =bb_out.dihed_angles;
 
 	//other vars
-	int error;
+	int i, error;
 	double w_ip1;
 	//trans
 	//gsl_vector_view an_=gsl_vector_subvector(an,0,7);
 	gsl_vector_set(w,0,s);
-	for(int i = 0; i < MOVE_LENGHTH-1; i++)
+	for(i=0;i<MOVE_LENGHTH-1;i++)
 	{
 		w_ip1=gsl_vector_get( x, i);
 		gsl_vector_set(w,i+1,w_ip1);
@@ -428,23 +422,15 @@ int T7_solver (const gsl_vector *x, void *p, gsl_vector *f)
 	return error;
 }
 
-gsl_matrix * graham_schmidt ( gsl_vector *v)
+
+gsl_matrix * gram_schmidt ( gsl_vector *v)
 {
-    int
-        n = v->size,
-        i,
-        j,
-        k;
-
-    double
-        norm_v2,
-        norm_v,
-        a,
-        vw[n][n];
-
-    gsl_matrix
-        *B = gsl_matrix_alloc(n,n);
-
+	int n=v->size;
+	int i,j,k;
+	double norm_v2, norm_v;
+	double a;
+	double vw[n][n];
+	gsl_matrix *B=gsl_matrix_alloc(n,n);
 	k=gsl_vector_max_index (v);
 	norm_v2=0;
 	//get vector
@@ -494,4 +480,3 @@ gsl_matrix * graham_schmidt ( gsl_vector *v)
 	}
 	return B;
 }
-

@@ -8,8 +8,6 @@
  
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
-#include <gsl/gsl_linalg.h>
-#include "../lib/messages.h"
 /** @brief EPSIL_DET. */
 #define EPSIL_DET (0.0000001)
 

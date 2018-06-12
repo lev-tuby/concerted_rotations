@@ -9,7 +9,7 @@
 #include "Caterpillar_energies.h"
 #include "messages.h"
 #include "my_geom.h"
-#include "geom_prop.h"
+#include "my_memory.h"
 
 
 /**

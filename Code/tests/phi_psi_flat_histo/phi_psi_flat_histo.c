@@ -8,16 +8,17 @@
 #include <gsl/gsl_sf.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <gsl/gsl_math.h>
 
 #include "../../lib/Caterpillar_energies.h"
 #include "../../lib/my_memory.h"
 #include "../../lib/my_geom.h"
-#include "../../lib/geom_prop.h"
 #include "../../lib/Caterpillar_IO.h"
 #include "../../lib/CAT_moves.h"
 #include "../../lib/quaternions.h"
 #include "../../lib/histogram.h"
+#include "../../lib/messages.h"
+
 
 #define ACC 1
 #define REJ 0

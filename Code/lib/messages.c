@@ -5,15 +5,14 @@
 /** @brief Global counter of warnings raised.*/
 int global_warn;
 
-/** @brief Maximal number of warnings that are tolerated.*/
+/** @brief Maximum number of warnings that are tolerated.*/
 int global_max_warn;
 
 /**
- * @brief Fail message
  *
  * Wrapper around program termination
  *
- * @param[in]  message         Message describing reason for program failure.
+ * @param[in]  message         Message describing the reason for program failure.
  *
  * @return \c void
  */
@@ -24,25 +23,23 @@ void failed (char message[])
 }
 
 /**
- * @brief Checkpoint message
  *
  * Wrapper around checkpoint output
  *
- * @param[in]  message         Message describing state of program.
+ * @param[in]  message         Message describing program state.
  *
  * @return \c void
  */
 void checkpoint(char message[])
 {
-    printf ("\n CHECKPOINT *** %s ***\n \n", message);
+    fprintf (stderr,"\n CHECKPOINT *** %s ***\n \n", message);
 }
 
 /**
- * @brief Standard ERROR message
  *
- * Call of function results in program termination
+ * Terminates the program
  *
- * @param[in]  msg              Text of error message printed in comand line.
+ * @param[in]  msg              Error message to be printed on stderr.
  * @param[in]  *path            Path to file where error was raised.
  * @param[in]  line             Line number from where error was rised.
  *
@@ -56,14 +53,13 @@ void error(char msg[], char *path, int line)
 }
 
 /**
- * @brief Standard WARNING message
  *
- * Call of function results in rising warrning message if number of already rised warning is smaller then maximal number of allowed warnings.
- * If number of warnings reach maximal number <c>global_max_warn</c> program is terminated and place from where warning was generated is shown.
+ * Rises a warning message if the number of already rised warning is smaller then maximal number of allowed warnings.
+ * Otherwise, if the number of warnings has reached the maximum <c>global_max_warn</c>, the program is terminated and the origin of the last warning is shown.
  *
- * @param[in]  msg              Text of error message printed in comand line.
- * @param[in]  *path            Path to file where error was raised.
- * @param[in]  line             Line number from where error was rised.
+ * @param[in]  msg              Error message to be printed on stderr.
+ * @param[in]  *path            Path to the file where the error was raised.
+ * @param[in]  line             Line number from where the error was rised.
  *
  * @return \c void
  */
@@ -84,19 +80,18 @@ void warning(char msg[], char *path, int line)
 }
 
 /**
- * @brief Standard INFO message
  *
- * Call of this function print out INFO message ... should contain inportant informations or hints for simulation.
+ * Prints out an INFO message ... should contain inportant informations or hints for simulation.
  *
- * @param[in]  msg              Text of error message printed in comand line.
- * @param[in]  *path            Path to file where error was raised.
- * @param[in]  line             Line number from where error was rised.
+ * @param[in]  msg              Error message to be  printed on stderr.
+ * @param[in]  *path            Path to the file where the error was raised.
+ * @param[in]  line             Line number from where the error was raised.
  *
  * @return \c void
  */
 void info(char msg[], char *path, int line)
 {
-    fprintf(stdout, "INFO:\t%s\n", msg);
-    fflush(stdout);
+    fprintf(stderr, "INFO:\t%s\n", msg);
+    fflush(stderr);
 }
 
