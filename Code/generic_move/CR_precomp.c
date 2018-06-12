@@ -16,7 +16,6 @@ int (*TmT[7])(gsl_vector *,const struct cr_input_data) = {TmT7_t1, TmT7_t2, TmT7
 gsl_matrix * (*jac[7])(struct cr_input_data) = {jac_t1, jac_t2, jac_t3, jac_t4, jac_t5, jac_t6, jac_t7};
 
 /**
- * @brief Allocation of #cr_input_data structure
  *
  * @param[in]      *bb               #cr_input_data structure.
  *
@@ -30,7 +29,6 @@ gsl_matrix * (*jac[7])(struct cr_input_data) = {jac_t1, jac_t2, jac_t3, jac_t4, 
 }
 
 /**
- * @brief Free #cr_input_data structure
  *
  * @param[in]      *bb               #cr_input_data structure.
  *
@@ -44,7 +42,6 @@ void free_cr_input_data(cr_input_data *bb){
 }
 
 /**
- * @brief Copy one #cr_input_data structure to other
  *
  * @param[in]      *bb_a             Copy to.
  * @param[in]      *bb_b             Copy from.
@@ -59,7 +56,6 @@ void memcpy_cr_input_data(cr_input_data *bb_a, const cr_input_data *bb_b){
 }
 
 /**
- * @brief Print #cr_input_data in given stream
  *
  * @param[in]      *bb               cr_input_data for printing.
  * @param[out]     *stream           FILE stream to which data are printed.
@@ -82,7 +78,6 @@ void print_cr_input_data(const cr_input_data *bb, FILE *stream){
 }
 
 /**
- * @brief Print comparison between two #cr_input_data structures
  *
  * @param[in]      *bb_a             The first cr_input_data for comparison.
  * @param[in]      *bb_b             The second cr_input_data for comparison.
@@ -106,7 +101,6 @@ void compare_cr_input_data(const cr_input_data *bb_a, const cr_input_data *bb_b,
 }
 
 /**
- * @brief Compare two #cr_input_data if structures are same return 0 otherwise 1
  *
  * @param[in]      *bb_a             The first cr_input_data for comparison.
  * @param[in]      *bb_b             The second cr_input_data for comparison.
