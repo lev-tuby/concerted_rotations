@@ -575,14 +575,10 @@ void CAT_rescale( cat_prot *p)
  */
 void CAT_rescale( cat_prot *protein)
 {
-	int i,j,k,l;
+	int i,j,k;
 	double bond[3];
 	double b;
-	double r_NH=CAT_Rbond_NH;
 	double r_CO=CAT_Rbond_CO;
-	double r_CN=CAT_Rbond_CN;
-	double r_CCa=CAT_Rbond_CCa;
-	double r_CaN=CAT_Rbond_CaN;
 
 	for(i=0;i<protein->n_res;i++)
 	{
@@ -1485,8 +1481,6 @@ int print_omega_errors(FILE *stream, const cat_prot *p, char *path, int line)
         out=0;
 
     double
-        angle_CaCN,
-        angle_CNCa,
         omega;
 
     fprintf(stream,"omega:\n");

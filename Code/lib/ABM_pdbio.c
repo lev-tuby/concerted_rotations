@@ -68,8 +68,7 @@ int PDBIO_test (const char *input_path, const char *output_path)
 
 	pdb_atom_list
         *atomsB    = NULL,
-        *atoms     = NULL,
-        *new_atom  = NULL;
+        *atoms     = NULL;
 
 	input_file  = fopen(input_path , "r");
 	output_file = fopen(output_path, "w");
@@ -122,7 +121,6 @@ inline void strip_spaces (char *s)
 int PDBIO_read_atom (char *line, pdb_atom *at)
 {
 	char
-		*s,
 		buff_line[81];
 
 	if (line == NULL) {
@@ -250,7 +248,6 @@ int PDBIO_read_all_atoms (FILE *pdb_in, pdb_atom_list **atoms)
 			atom;
 
 		pdb_atom_list
-			*old_atoms      = *atoms,
 			*tmp_atoms      = NULL,
 			*tmp_atoms_tail = NULL;
 

@@ -18,7 +18,6 @@
 void CATIO_fastadecoder (int *Dec, char *Enc,int Seq_Length)
 {
 	int i;
-	int err5=1;
 	for(i=0;i<Seq_Length;i++){
 		switch (Enc[i]) {
 			case 'A':
@@ -213,23 +212,22 @@ void CATIO_cat2pdb 		(  char *filename, char *writemode, char *remark, cat_prot 
  *
  * @return \c void
  */
-void CATIO_pdb2cat ( cat_prot **prot, int *N_prot, int N_atom_types, char ATnames[N_atom_types][5], char Loc_keep, char *filename)
+int CATIO_pdb2cat ( cat_prot **prot, int *N_prot, int N_atom_types, char ATnames[N_atom_types][5], char Loc_keep, char *filename)
 {
 	pdb_atom_list *atoms=NULL;
-	pdb_atom_list *pn,*pp;
+	pdb_atom_list *pn;
 	char 	error[1024];
 	int 	IO_err;
 	FILE *pdb_in;
 	int  	N_at;
 	int delete;
-	char *s;
 	double **buff_coord=NULL;
 	//char   **buff_names;
 	//char   **buff_resNames;
 	char  AA_3lett_code[CAT_S][4]=CAT_AADefs;
 	int 	CAT_AAcode[CAT_S]=CAT_AACODE;
 	char  cat_ATnames[NATOM][6]=CAT_ATnames;
-	int flag_H_insert=1; //default: insert hydrogens
+//	int flag_H_insert=1; //default: insert hydrogens
 	cat_prot *p;
 	for(int i=0;i<NATOM;i++) {strip_spaces(ATnames[i]);}
 	if ( *prot !=NULL)
@@ -316,7 +314,7 @@ void CATIO_pdb2cat ( cat_prot **prot, int *N_prot, int N_atom_types, char ATname
 					p->H[cnt[i]][0]=pn->values.x;
 					p->H[cnt[i]][1]=pn->values.y;
 					p->H[cnt[i]][2]=pn->values.z;
-					flag_H_insert=0;
+//					flag_H_insert=0;
 				}
 				if(strncmp(pn->values.name,cat_ATnames[ATOM_CA],5)==0)
 				{
@@ -361,6 +359,7 @@ void CATIO_pdb2cat ( cat_prot **prot, int *N_prot, int N_atom_types, char ATname
 
 	*prot=p;
 	free_d2t(buff_coord);
+    return IO_err;
 }
 
 /**
@@ -374,7 +373,7 @@ void CATIO_pdb2cat ( cat_prot **prot, int *N_prot, int N_atom_types, char ATname
  *
  * @return \c void
  */
-void CATIO_pdb2cat_keep_CB  	( cat_prot **prot, int *N_prot, char *filename)
+int CATIO_pdb2cat_keep_CB  	( cat_prot **prot, int *N_prot, char *filename)
 {
 	pdb_atom_list *atoms=NULL;
 	pdb_atom_list *pn,*pp;
@@ -384,12 +383,10 @@ void CATIO_pdb2cat_keep_CB  	( cat_prot **prot, int *N_prot, char *filename)
 	size_t n_atom_per_res=NATOM;
 	int  	N_at;
 	int delete;
-	char *s;
 	double **buff_coord=NULL;
 	//char   **buff_names;
 	//char   **buff_resNames;
 	char  AA_3lett_code[CAT_S][4]=CAT_AADefs;
-	char  FASTA[CAT_S]=CAT_FASTA;
 	int 	CAT_AAcode[CAT_S]=CAT_AACODE;
 	char  ATnames[NATOM][5]=CAT_ATnames;
 	cat_prot *p;
@@ -532,6 +529,7 @@ void CATIO_pdb2cat_keep_CB  	( cat_prot **prot, int *N_prot, char *filename)
 
 	*prot=p;
 	free_d2t(buff_coord);
+    return IO_err;
 }
 
 /**

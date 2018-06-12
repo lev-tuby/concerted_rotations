@@ -285,14 +285,14 @@ void CAT_copy(cat_prot *dest, cat_prot *orig)
 	if(dest->n_atoms != orig->n_atoms)
 	{
 		sprintf(err,
-				"CAT_copy. Proteins have different numbers of atoms. dest: %d. orig %d",
+				"CAT_copy. Proteins have different numbers of atoms. dest: %zu. orig %zu",
 				dest->n_atoms,orig->n_atoms);
 		failed(err);
 	}
 	if(dest->n_atom_per_res != orig->n_atom_per_res)
 	{
 		sprintf(err,
-				"CAT_copy. Proteins have different numbers of atoms per residue. dest: %d. orig %d",
+				"CAT_copy. Proteins have different numbers of atoms per residue. dest: %zu. orig %zu",
 				dest->n_atom_per_res,orig->n_atom_per_res);
 		failed(err);
 	}
@@ -384,7 +384,6 @@ void Compute_delta_en(mc_move_data *mvdt,conf *C, energy_par *ep)
 	double e_SAW=0;
 	double energ_CaCa=0;
 	double energ_HB=0;
-	double energ_Wat=0;
 	double energ_Bend=0;
 	double r,bond;
 	//bending energy only for termini (I am computing it also for pivots..
@@ -399,7 +398,6 @@ void Compute_delta_en(mc_move_data *mvdt,conf *C, energy_par *ep)
 	energ_Bend+=CATENR_Ca_Ca_Bend(p->C[r1],p->N[r1],CAT_Rbond_NC,CATENR_CaCa_SPRING);
 	energ_Bend+=CATENR_Ca_Ca_Bend(p->C[r2],p->N[r2],CAT_Rbond_NC,CATENR_CaCa_SPRING);
 	//loop on the interacting atom pairs (needs to be optimized!!)
-	int step=1;
 	for(int i=0;i<p->n_res;i++) {
 		C->Dcontacts[i]=0;
 	}
