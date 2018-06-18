@@ -23,9 +23,35 @@ typedef struct cr_input_data {
     gsl_vector *d;              /**< Vector of displacements orthogonal to z with length \f$(numberOfResidues*2)+1\f$. */
 } cr_input_data;
 
+/**
+ * @brief Allocation of #cr_input_data structure
+ */
 void alloc_cr_input_data(cr_input_data *bb);
+
+/**
+ * @brief Free #cr_input_data structure
+ */
 void free_cr_input_data(cr_input_data *bb);
-void memcpy_cr_input_data(cr_input_data *bb_a, cr_input_data *bb_b);
+
+/**
+ * @brief Copy one #cr_input_data structure to other
+ */
+void memcpy_cr_input_data(cr_input_data *bb_a, const cr_input_data *bb_b);
+
+/**
+ * @brief Print #cr_input_data in given stream
+ */
+void print_cr_input_data(const cr_input_data *bb, FILE *stream);
+
+/**
+ * @brief Print comparison between two #cr_input_data structures
+ */
+void compare_cr_input_data(const cr_input_data *bb_a, const cr_input_data *bb_b, FILE *stream);
+
+/**
+ * @brief Compare two #cr_input_data if structures are same return 0 otherwise 1
+ */
+int compare_bend_angles(const cr_input_data *bb_a, const cr_input_data *bb_b);
 
 /**
  * @brief Internal representation of protein backbone for concerted rotation move

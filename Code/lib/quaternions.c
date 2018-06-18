@@ -65,8 +65,6 @@ int rotation3D_build 		( gsl_matrix * rot, const gsl_vector *quat)
  */
 int rototransl3D_build ( gsl_matrix * rt, const gsl_vector *quat, const gsl_vector * transl)
 {
-	double rot[3][3];
-	double q0,q1,q2,q3;
 	double t[4];
 	if(quat->size!=4 || rt->size1 !=4 || rt->size2 !=4 ) {
 		return GSL_EBADLEN;
@@ -95,7 +93,7 @@ int rototransl3D_build ( gsl_matrix * rt, const gsl_vector *quat, const gsl_vect
  *
  * @param[in,out]   *q                Calculated quaternion.
  * @param[in]       *v                Vector around which rotation is performed.
- * @param[in]        theta            Angle by which rotation being performed.
+ * @param[in]        theta            Angle (in radians) by which rotation being performed.
  *
  * @return GSL err code
  */

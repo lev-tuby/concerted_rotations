@@ -71,9 +71,6 @@ typedef struct {
 
 //pezzotto per rescale...
 int prot_rescale ( cat_prot *p);
-void print_bond_errors(FILE *stream,cat_prot *p);
-void print_joint_angles_errors(FILE *stream, cat_prot *p);
-void print_omega_errors(FILE *stream, cat_prot *p);
 //
 
 
@@ -128,9 +125,9 @@ int main(int argc, char *argv[])
         if(i>0 && i%1000==0)
         {
             fprintf(stdout,"%d --\n",i);
-            print_bond_errors(stdout,mc_trj->new.p);
-            print_joint_angles_errors(stdout,mc_trj->new.p);
-            print_omega_errors(stdout,mc_trj->new.p);
+            print_bond_errors(stdout,mc_trj->new.p, __FILE__, __LINE__);
+            print_joint_angles_errors(stdout,mc_trj->new.p, __FILE__, __LINE__);
+            print_omega_errors(stdout,mc_trj->new.p, __FILE__, __LINE__);
         }
         if(i%100000)
         {
@@ -288,14 +285,14 @@ void CAT_copy(cat_prot *dest, cat_prot *orig)
 	if(dest->n_atoms != orig->n_atoms)
 	{
 		sprintf(err,
-				"CAT_copy. Proteins have different numbers of atoms. dest: %d. orig %d",
+				"CAT_copy. Proteins have different numbers of atoms. dest: %zu. orig %zu",
 				dest->n_atoms,orig->n_atoms);
 		failed(err);
 	}
 	if(dest->n_atom_per_res != orig->n_atom_per_res)
 	{
 		sprintf(err,
-				"CAT_copy. Proteins have different numbers of atoms per residue. dest: %d. orig %d",
+				"CAT_copy. Proteins have different numbers of atoms per residue. dest: %zu. orig %zu",
 				dest->n_atom_per_res,orig->n_atom_per_res);
 		failed(err);
 	}
@@ -387,7 +384,6 @@ void Compute_delta_en(mc_move_data *mvdt,conf *C, energy_par *ep)
 	double e_SAW=0;
 	double energ_CaCa=0;
 	double energ_HB=0;
-	double energ_Wat=0;
 	double energ_Bend=0;
 	double r,bond;
 	//bending energy only for termini (I am computing it also for pivots..
@@ -402,7 +398,6 @@ void Compute_delta_en(mc_move_data *mvdt,conf *C, energy_par *ep)
 	energ_Bend+=CATENR_Ca_Ca_Bend(p->C[r1],p->N[r1],CAT_Rbond_NC,CATENR_CaCa_SPRING);
 	energ_Bend+=CATENR_Ca_Ca_Bend(p->C[r2],p->N[r2],CAT_Rbond_NC,CATENR_CaCa_SPRING);
 	//loop on the interacting atom pairs (needs to be optimized!!)
-	int step=1;
 	for(int i=0;i<p->n_res;i++) {
 		C->Dcontacts[i]=0;
 	}
@@ -520,9 +515,9 @@ int prot_rescale ( cat_prot *p)
 			p->N[0][i]+=b2[i]*(CAT_Rbond_CaN/r-1.0);
 		}
 	}
-	p->phi[0]=calc_dihedralf_angle(p->H[0],p->N[0],p->CA[0],p->C[0])-M_PI;
+	p->phi[0]=dihedralangle_ABCD(p->H[0],p->N[0],p->CA[0],p->C[0])-M_PI;
 	int n=p->n_res-1;
-	p->psi[n]=calc_dihedralf_angle(p->N[n],p->CA[n],p->C[n],p->O[n])-M_PI;
+	p->psi[n]=dihedralangle_ABCD(p->N[n],p->CA[n],p->C[n],p->O[n])-M_PI;
 	for(int i=0;i<p->n_res;i++){
 		for(int j=0;j<3;j++){
 			b1[j]=p->N[i][j]-p->CA[i][j];
@@ -542,57 +537,6 @@ int prot_rescale ( cat_prot *p)
 	return error;
 }
 
-void print_bond_errors(FILE *stream,cat_prot *p)
-{
-	double NCa_bond[3];
-	double CaC_bond[3];
-	double CN_bond[3];
-	double norm_NCa, norm_CaC, norm_CN;
-	fprintf(stream,"bonds:\n");
-	for(int i=0;i<p->n_res;i++) {
-		for(int j=0;j<3;j++){
-			NCa_bond[j]=p->CA[i][j] -p->N [i][j];
-			CaC_bond[j]=p->C [i][j] -p->CA[i][j];
-			if(i<p->n_res-1) {
-				CN_bond[j] =p->N [i+1][j] -p->C [i][j];
-			}
-		}
-		norm_NCa=norm_d(NCa_bond,3);
-		norm_CaC=norm_d(CaC_bond,3);
-		norm_CN =norm_d(CN_bond,3);
-        if (fabs(norm_NCa-CAT_Rbond_CaN) > 10e-9 || fabs(norm_CaC-CAT_Rbond_CCa) > 10e-9 || fabs(norm_CN-CAT_Rbond_CN) > 10e-9)
-		    fprintf(stream,"Nca: %g CaC: %g CN: %g\t", fabs(norm_NCa-CAT_Rbond_CaN), fabs(norm_CaC-CAT_Rbond_CCa), fabs(norm_CN-CAT_Rbond_CN));
-	}
-	fprintf(stream,"\n");
-	fflush(stream);
-}
 
-void print_joint_angles_errors(FILE *stream, cat_prot *p)
-{
-	double angle_CaCN, angle_CNCa;
-	fprintf(stream,"joint angles:\n");
-	for(int i=1;i<p->n_res;i++) {
-		angle_CNCa=angle_ABC(p->C[i-1],p->N[i],p->CA[i]);
-		angle_CaCN=angle_ABC(p->CA[i-1],p->C[i-1],p->N[i]);
-        if (fabs(angle_CNCa-CAT_angle_CNCa) > 10e-9 || fabs(angle_CaCN-CAT_angle_CaCN) > 10e-9)
-		    fprintf(stream,"%d CNCa: %g CaCN: %g \t", i,fabs(angle_CNCa-CAT_angle_CNCa), fabs(angle_CaCN-CAT_angle_CaCN));
-	}
-	fprintf(stream,"\n");
-	fflush(stream);
-}
-void print_omega_errors(FILE *stream, cat_prot *p)
-{
-	double angle_CaCN, angle_CNCa;
-	double omega;
-	fprintf(stream,"omega:\n");
-	for(int i=1;i<p->n_res;i++) {
-		omega=calc_dihedralf_angle(p->CA[i-1],p->C[i-1],p->N[i],p->CA[i]);
-		omega=gsl_sf_angle_restrict_pos (omega);
-        if (fabs(omega-M_PI) > 10e-9)
-		    fprintf(stream,"%g \n", fabs(omega-M_PI));
-	}
-	fprintf(stream,"\n");
-	fflush(stream);
-}
 
 

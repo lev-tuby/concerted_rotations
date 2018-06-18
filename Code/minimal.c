@@ -23,17 +23,22 @@
 
 #define MOVE_LENGHTH 7
 
+
+
+/*******PARAMETERS OF THE MODEL*******/
+//Backbone bond lengths
 #define CAT_Rbond_CaN 1.4500000 //sist->Rbond[0]= 1.45000;
 #define CAT_Rbond_CCa 1.5200000	//sist->Rbond[1]=1.52000;
 #define CAT_Rbond_CN  1.3300000	//sist->Rbond[3]= 1.33000;
 #define CAT_Rbond_NC  2.4479800	//sist->Rbond[5], used for Bending instead of the angle..
+
 //Backbone angles
 #define CAT_angle_CaCN 2.017600615305445
 #define CAT_angle_CNCa 2.1275563581810877
 #define CAT_angle_NCaC 1.9373154697137058
-//others
+/*^^^^^^^PARAMETERS OF THE MODEL^^^^^^^*/
 
-
+// structure used in solver and T7_solver functions
 struct rparams {
 	double s;
 	gsl_matrix *B;
@@ -42,131 +47,155 @@ struct rparams {
 	cr_input_data bb_out;
 };
 
-// functions needed for concerted rotation move
+// functions needed for concerted rotation move (have to be included in every implementation!)
 int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double sigma);
 int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov);
 double jac_Det(int a, cr_input_data bb_in);
 int T7_solver (const gsl_vector *x, void *p, gsl_vector *f);
 gsl_matrix * gram_schmidt ( gsl_vector *v);
 
-// functions not nessasary for concerted rotation just for printing dihedrals
-void print_dihedrals(cr_input_data *bb);
-void save_dihedrals(cr_input_data *bb, FILE *output);
+
 // DO NOT FORGET TO INCLUDE ALSO message.[c,h] due to usage in CR_precomp.[c,h] !!!
 
 gsl_rng *rng_r;
 int main(int argc, char *argv[])
 {
 	int
-        maxIteration=1e8,       // how many concerted rotation are done
-        error;
+        N_res = 20,             // number of "residues"
+        c,                      // number that define the first "residue" from which concerted rotation is done
+        maxIteration = 1e8,     // how many concerted rotation are done
+        error;                  // value to catch error code from random_rot
 
     double
-        sigma=0.10;
+        dihedrals[N_res][2],    // [x][0] is 
+        sigma = 0.10;           // fixed value of sigma used in concerted rotation move (see Documentation)
+
 
     FILE
         *output;
         output = fopen ("dihedrals.dat", "w+");
 
-	    //alloc interface for random rotation
-	    struct cr_input_data bb_in; // see CR_precomp.h
-	    struct cr_input_data bb_out; // see CR_precomp.h
+    // alloc interface for random rotation
+    cr_input_data // see CR_precomp.h
+        bb_in,
+        bb_out;
 
-        alloc_cr_input_data(&bb_in);
-        alloc_cr_input_data(&bb_out);
+    alloc_cr_input_data(&bb_in);
+    alloc_cr_input_data(&bb_out);
 
-	    //backbone joint angles and bond lengths are fixed. 
-	    //Check the Mathematica notebook for details.
+    // Backbone joint angles and bond lengths are fixed and defined here
+    // Check the Mathematica notebook for details
+    //
+    // If more then 3 residues are supposed to be moved then more similar
+    // lines have to be included.
+    gsl_vector_set(bb_in.r,0,CAT_Rbond_CaN); 
+    gsl_vector_set(bb_in.r,1,CAT_Rbond_CCa-CAT_Rbond_NC*cos(CAT_angle_CaCN)); 
+    gsl_vector_set(bb_in.r,2,CAT_Rbond_CaN);
+    gsl_vector_set(bb_in.r,3,CAT_Rbond_CCa-CAT_Rbond_NC*cos(CAT_angle_CaCN)); 
+    gsl_vector_set(bb_in.r,4,CAT_Rbond_CaN);
+    gsl_vector_set(bb_in.r,5,CAT_Rbond_CCa-CAT_Rbond_NC*cos(CAT_angle_CaCN)); 
+    gsl_vector_set(bb_in.r,6,CAT_Rbond_CaN);
 
-        gsl_vector_set(bb_in.r,0,CAT_Rbond_CaN); 
-	    gsl_vector_set(bb_in.r,1,CAT_Rbond_CCa-CAT_Rbond_NC*cos(CAT_angle_CaCN)); 
-        gsl_vector_set(bb_in.r,2,CAT_Rbond_CaN);
-	    gsl_vector_set(bb_in.r,3,CAT_Rbond_CCa-CAT_Rbond_NC*cos(CAT_angle_CaCN)); 
-        gsl_vector_set(bb_in.r,4,CAT_Rbond_CaN);
-	    gsl_vector_set(bb_in.r,5,CAT_Rbond_CCa-CAT_Rbond_NC*cos(CAT_angle_CaCN)); 
-        gsl_vector_set(bb_in.r,6,CAT_Rbond_CaN);
+    gsl_vector_set(bb_in.d,0,0);
+    gsl_vector_set(bb_in.d,1,CAT_Rbond_CN*sin(CAT_angle_CaCN));
+    gsl_vector_set(bb_in.d,2,0);
+    gsl_vector_set(bb_in.d,3,CAT_Rbond_CN*sin(CAT_angle_CaCN));
+    gsl_vector_set(bb_in.d,4,0);
+    gsl_vector_set(bb_in.d,5,CAT_Rbond_CN*sin(CAT_angle_CaCN));
+    gsl_vector_set(bb_in.d,6,0);
 
-	    gsl_vector_set(bb_in.d,0,0);
-	    gsl_vector_set(bb_in.d,1,CAT_Rbond_CN*sin(CAT_angle_CaCN));
-	    gsl_vector_set(bb_in.d,2,0);
-	    gsl_vector_set(bb_in.d,3,CAT_Rbond_CN*sin(CAT_angle_CaCN));
-	    gsl_vector_set(bb_in.d,4,0);
-	    gsl_vector_set(bb_in.d,5,CAT_Rbond_CN*sin(CAT_angle_CaCN));
-	    gsl_vector_set(bb_in.d,6,0);
+    gsl_vector_set(bb_in.bend_angles,0,CAT_angle_NCaC);
+    gsl_vector_set(bb_in.bend_angles,1,CAT_angle_CNCa-CAT_angle_CaCN);
+    gsl_vector_set(bb_in.bend_angles,2,CAT_angle_NCaC);
+    gsl_vector_set(bb_in.bend_angles,3,CAT_angle_CNCa-CAT_angle_CaCN);
+    gsl_vector_set(bb_in.bend_angles,4,CAT_angle_NCaC);
+    gsl_vector_set(bb_in.bend_angles,5,CAT_angle_CNCa-CAT_angle_CaCN);
+    gsl_vector_set(bb_in.bend_angles,6,CAT_angle_NCaC);
 
-	    gsl_vector_set(bb_in.bend_angles,0,CAT_angle_NCaC);
-    	gsl_vector_set(bb_in.bend_angles,1,CAT_angle_CNCa-CAT_angle_CaCN);
-        gsl_vector_set(bb_in.bend_angles,2,CAT_angle_NCaC);
-    	gsl_vector_set(bb_in.bend_angles,3,CAT_angle_CNCa-CAT_angle_CaCN);
-        gsl_vector_set(bb_in.bend_angles,4,CAT_angle_NCaC);
-    	gsl_vector_set(bb_in.bend_angles,5,CAT_angle_CNCa-CAT_angle_CaCN);
-        gsl_vector_set(bb_in.bend_angles,6,CAT_angle_NCaC);
+    // copy bb_in to bb_out (see CR_precomp.[h,c])
+    memcpy_cr_input_data(&bb_out, &bb_in);
 
-	    //random number generator
-	    rng_r=gsl_rng_alloc(gsl_rng_taus2);
-	    gsl_rng_set(rng_r, atoi(argv[1])); // random generator is initialized from frist argument
+    //random number generator initialization from first argument of the program
+    rng_r = gsl_rng_alloc(gsl_rng_taus2);
+    gsl_rng_set(rng_r, atoi(argv[1]));
 
-        // set random angles to all torsions
-        for(int i=0; i<MOVE_LENGHTH; i++)
+
+    //create random dihedral configuration
+    for(int i = 0; i < N_res; i++)
+    {
+        dihedrals[i][0]=2*M_PI*gsl_rng_uniform(rng_r)-M_PI;
+        dihedrals[i][1]=2*M_PI*gsl_rng_uniform(rng_r)-M_PI;
+    }
+
+    for(int k = 0; k < maxIteration; k++) // simulation loop at given sigma
+    {
+        // select random part of chain
+        c = 1 + gsl_rng_uniform_int(rng_r, N_res - 2 );
+
+        // Print out statistics
+        if(k%1000==0)
         {
-            gsl_vector_set(bb_in.dihed_angles,i,2*M_PI*gsl_rng_uniform(rng_r)-M_PI);
+            printf("Iteration: %i\n", k);fflush(stdout);
+            for(int i = 0; i < N_res; i++)
+            {
+                fprintf(output, "%f\t", dihedrals[i][0]);
+                fprintf(output, "%f\t", dihedrals[i][1]);
+            }
+            fprintf(output, "\n");
         }
 
-        memcpy_cr_input_data (&bb_out, &bb_in);
-
-
-	    for(int k=0;k<maxIteration;k++) // simulation loop at given sigma
+        //params - PHI matrix
+        for(int i=0;i<4;i++)
         {
-            if(k%1000==0)
-            {
-                printf("Iteration: %i\n", k);
-                print_dihedrals(&bb_out);
-                save_dihedrals(&bb_out, output);
-            }
-            error = random_rot(bb_out, bb_in,rng_r, sigma);
-            if (error != 0){continue;}
-
-            for(int i = 0; i < MOVE_LENGHTH; i++) // copy preturbed angles from bb_out to bb_in and restrict angles to [-pi,pi)
-            {
-                gsl_vector_set(bb_in.dihed_angles,i, gsl_sf_angle_restrict_symm(gsl_vector_get(bb_out.dihed_angles,i)));
-            }
+            int j=i*2;
+            //torsion angles (dihedrals)
+            gsl_vector_set(bb_in.dihed_angles, j, dihedrals[c+i][0]);
         }
+
+        //params - PSI matrix
+        for(int i=0;i<3;i++)
+        {
+            int j=2*i+1;
+            //torsion angles (dihedrals)
+            gsl_vector_set(bb_in.dihed_angles,j,dihedrals[c+i][1]);
+        }
+
+        gsl_vector_memcpy ( bb_out.dihed_angles, bb_in.dihed_angles);
+
+        // Actual move concerted rotation move
+        error = random_rot(bb_out, bb_in,rng_r, sigma);
+        if (error != 0){continue;}
+
+        // Update the dihedrals after move
+        dihedrals[c][0]  =gsl_sf_angle_restrict_symm(gsl_vector_get(bb_out.dihed_angles,0));
+        dihedrals[c][1]  =gsl_sf_angle_restrict_symm(gsl_vector_get(bb_out.dihed_angles,1));
+        dihedrals[c+1][0]=gsl_sf_angle_restrict_symm(gsl_vector_get(bb_out.dihed_angles,2));
+        dihedrals[c+1][1]=gsl_sf_angle_restrict_symm(gsl_vector_get(bb_out.dihed_angles,3));
+        dihedrals[c+2][0]=gsl_sf_angle_restrict_symm(gsl_vector_get(bb_out.dihed_angles,4));
+        dihedrals[c+2][1]=gsl_sf_angle_restrict_symm(gsl_vector_get(bb_out.dihed_angles,5));
+        dihedrals[c+3][0]=gsl_sf_angle_restrict_symm(gsl_vector_get(bb_out.dihed_angles,6));
+    }
+
     fclose(output);
     return error;
 }
 
-void print_dihedrals(cr_input_data *bb)
-{
-    printf("dihedral index:");
-    for(int i=0;i<MOVE_LENGHTH;i++){printf("%1i    \t",i);}
-    printf("\n");
-    printf("phi           :");
-    for(int i=0;i<MOVE_LENGHTH;i+=2){printf("%6.4lf\t       ",gsl_vector_get(bb->dihed_angles,i));}
-    printf("\n");
-    printf("psi           :");
-    for(int i=1;i<MOVE_LENGHTH;i+=2){printf("       %6.4lf\t",gsl_vector_get(bb->dihed_angles,i));}
-    printf("\n\n\n");
-}
-
-void save_dihedrals(cr_input_data *bb, FILE *output)
-{
-    for(int i=0;i<MOVE_LENGHTH;i++)
-    {
-        fprintf(output, "%f\t",gsl_vector_get(bb->dihed_angles,i));
-    }
-    fprintf(output, "\n");
-}
-
 int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double sigma)
 {
-	int error,a,i,m;
-	int angles_idx[MOVE_LENGHTH];
-    for (int ii=0;ii<MOVE_LENGHTH;ii++){angles_idx[ii]=ii;}
-	double ds;
+	int
+        error = 1,
+        a,
+        i,
+        m=MOVE_LENGHTH,
+        angles_idx[MOVE_LENGHTH];
+
+    for (int ii = 0; ii < MOVE_LENGHTH; ii++){
+        angles_idx[ii]=ii;
+    }
+
+	double
+        ds=gsl_ran_gaussian(rng_r,sigma);
 	//Try all 7 rotation angles.
-	m=MOVE_LENGHTH;
-	ds=gsl_ran_gaussian(rng_r,sigma);
-	error=1;
 	do{
 		i=gsl_rng_uniform_int (rng_r, m);
 		a=angles_idx[i];
@@ -243,75 +272,116 @@ int random_rot(cr_input_data bb_out, cr_input_data bb_in, gsl_rng *rng_r, double
 }
 
 
-int solver(cr_input_data bb_out, cr_input_data bb_in, int angle,double delta_mov)
+int solver(cr_input_data bb_out, cr_input_data bb_in, int angle, double delta_mov)
 {
-	double T_ar[MOVE_LENGHTH];
-	gsl_vector_view Tv=gsl_vector_view_array(T_ar,MOVE_LENGHTH);
-	gsl_vector * T = &Tv.vector;
-	gsl_matrix * B;
-	//solver
-  int status;
-  size_t  iter = 0;
-  const size_t n = MOVE_LENGHTH-1;
-	const gsl_multiroot_fsolver_type *Ts;
-  gsl_multiroot_fsolver *s;
-  //gsl_vector *x = gsl_vector_alloc (n);
-	double x_ar[MOVE_LENGHTH-1];
-	gsl_vector_view x_v=gsl_vector_view_array(x_ar,MOVE_LENGHTH-1);
-  gsl_vector *x = &x_v.vector;
-	//function parameters
-  struct rparams p;
-	//choose an angle, get tangential vector to manifold
-    status=(*TmT[angle])(T,bb_in);
-	if(status!=0) {
-		//printf("Jacobian not invertible. dice: %d Error code %d\n",angle,status);
-		return GSL_FAILURE; //again, I know it is not gsl's fault..
-	}
-  //printf ("angle %d status = %s\n",angle, gsl_strerror (status));
-	B=gram_schmidt (T);
-	//parameters
-	//printf("AJJJJJ delta_mov=%lf\n",delta_mov);
-	p.s=delta_mov;
-	p.B=B;
-	//p.wspace=gsl_vector_alloc(7);
-	double ws_ar[MOVE_LENGHTH];
-	gsl_vector_view ws_v=gsl_vector_view_array(ws_ar,MOVE_LENGHTH);
-	p.wspace=&ws_v.vector;
-	//
-	p.bb_out=bb_out;
-	p.bb_in	=bb_in;
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CHECK IF IT IS opravdu MOVE_LENGHTH-1 !!!!!!!!!!
-  gsl_multiroot_function f = {&T7_solver, n, &p};
-	gsl_vector_set_zero(x);
-	//solver inizialization
-  Ts = gsl_multiroot_fsolver_hybrid;
-  s = gsl_multiroot_fsolver_alloc (Ts, MOVE_LENGHTH-1);
-  gsl_multiroot_fsolver_set (s, &f, x);
+    double
+        T_ar[MOVE_LENGHTH];
 
-  do
-	{
-      iter++;
-      status = gsl_multiroot_fsolver_iterate (s);
-      if (status)   /* check if solver is stuck */
-			{
-                break;
-			}
-      status = gsl_multiroot_test_residual (s->f, 1e-12);
-	} while (status == GSL_CONTINUE && iter < 100);
-  gsl_multiroot_fsolver_free (s);
-  gsl_matrix_free (B);
-	return status;
+    gsl_vector_view
+        Tv = gsl_vector_view_array(T_ar, MOVE_LENGHTH);
+
+    gsl_vector
+        *T = &Tv.vector;
+
+    gsl_matrix
+        *B;
+
+    //solver
+    int
+        status;
+
+    size_t
+        iter = 0;
+
+    const size_t
+        n = MOVE_LENGHTH-1;
+
+    const gsl_multiroot_fsolver_type
+        *Ts;
+
+    gsl_multiroot_fsolver
+        *s;
+
+    double
+        x_ar[MOVE_LENGHTH-1];
+
+    gsl_vector_view
+        x_v = gsl_vector_view_array(x_ar,MOVE_LENGHTH-1);
+
+    gsl_vector
+        *x = &x_v.vector;
+
+    //function parameters
+    struct rparams
+        p;
+
+    //choose an angle, get tangential vector to manifold
+    status = (*TmT[angle])(T, bb_in); // for TmT see CR_precomp.[h,c]
+
+    if(status!=0) {
+        //printf("Jacobian not invertible. dice: %d Error code %d\n",angle,status);
+        return GSL_FAILURE; //again, I know it is not gsl's fault..
+    }
+    // get orthonormalbasis to T manifold
+    B = gram_schmidt (T);
+
+    //parameters
+    p.s = delta_mov;
+    p.B = B;
+
+    double
+        ws_ar[MOVE_LENGHTH];
+
+    gsl_vector_view
+        ws_v = gsl_vector_view_array(ws_ar,MOVE_LENGHTH);
+
+    p.wspace = &ws_v.vector;
+    //
+    p.bb_out=bb_out;
+    p.bb_in	=bb_in;
+    // !!!CHECK MOVE_LENGHTH-1!!!
+    gsl_multiroot_function
+        f = {&T7_solver, n, &p};
+
+    gsl_vector_set_zero(x);
+
+    //solver inizialization
+    Ts = gsl_multiroot_fsolver_hybrid;
+    s = gsl_multiroot_fsolver_alloc (Ts, MOVE_LENGHTH-1);
+    gsl_multiroot_fsolver_set (s, &f, x);
+
+    do
+    {
+        iter++;
+        status = gsl_multiroot_fsolver_iterate (s);
+        if (status)   // check if solver is stuck
+        {
+            break;
+        }
+        status = gsl_multiroot_test_residual (s->f, 1e-12);
+    } while (status == GSL_CONTINUE && iter < 100);
+
+    gsl_multiroot_fsolver_free (s);
+    gsl_matrix_free (B);
+    return status;
 }
 
 double jac_Det(int a, cr_input_data bb_in)
 {
-	int sign;
-	double J;
-	gsl_matrix *M;
-	gsl_permutation * p = gsl_permutation_alloc (MOVE_LENGHTH-1);
-    M=(*jac[a])(bb_in);
+    int
+        sign;
+
+    double
+        J;
+
+    gsl_matrix
+        *M;
+    gsl_permutation
+        *p = gsl_permutation_alloc (MOVE_LENGHTH-1);
+
+    M = (*jac[a])(bb_in);
 	gsl_linalg_LU_decomp(M,p,&sign);
-	J=gsl_linalg_LU_det(M,sign);
+	J = gsl_linalg_LU_det(M,sign);
 	gsl_matrix_free(M);
 	gsl_permutation_free(p);
 	return J;

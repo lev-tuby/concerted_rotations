@@ -16,7 +16,6 @@ int (*TmT[7])(gsl_vector *,const struct cr_input_data) = {TmT7_t1, TmT7_t2, TmT7
 gsl_matrix * (*jac[7])(struct cr_input_data) = {jac_t1, jac_t2, jac_t3, jac_t4, jac_t5, jac_t6, jac_t7};
 
 /**
- * @brief Allocation of #cr_input_data structure
  *
  * @param[in]      *bb               #cr_input_data structure.
  *
@@ -30,7 +29,6 @@ gsl_matrix * (*jac[7])(struct cr_input_data) = {jac_t1, jac_t2, jac_t3, jac_t4, 
 }
 
 /**
- * @brief Free #cr_input_data structure
  *
  * @param[in]      *bb               #cr_input_data structure.
  *
@@ -44,19 +42,81 @@ void free_cr_input_data(cr_input_data *bb){
 }
 
 /**
- * @brief Copy one #cr_input_data structure to other
  *
  * @param[in]      *bb_a             Copy to.
  * @param[in]      *bb_b             Copy from.
  *
  * @return \c void
  */
-void memcpy_cr_input_data(cr_input_data *bb_a, cr_input_data *bb_b){
+void memcpy_cr_input_data(cr_input_data *bb_a, const cr_input_data *bb_b){
     gsl_vector_memcpy ( bb_a->dihed_angles, bb_b->dihed_angles);
     gsl_vector_memcpy ( bb_a->bend_angles , bb_b->bend_angles );
     gsl_vector_memcpy ( bb_a->r           , bb_b->r           );
     gsl_vector_memcpy ( bb_a->d           , bb_b->d           );
 }
+
+/**
+ *
+ * @param[in]      *bb               cr_input_data for printing.
+ * @param[out]     *stream           FILE stream to which data are printed.
+ *
+ * @return \c void
+ */
+void print_cr_input_data(const cr_input_data *bb, FILE *stream){
+    for(int i=0; i<7; i++){
+        fprintf(stream, "dihed_angles[%i] = %g\n", i, gsl_vector_get(bb->dihed_angles, i));
+    }
+    for(int i=0; i<7; i++){
+        fprintf(stream, "bend_angles[%i] = %g\n", i, gsl_vector_get(bb->bend_angles, i));
+    }
+    for(int i=0; i<7; i++){
+        fprintf(stream, "r[%i] = %g\n", i, gsl_vector_get(bb->r, i));
+    }
+    for(int i=0; i<7; i++){
+        fprintf(stream, "d[%i] = %g\n", i, gsl_vector_get(bb->d, i));
+    }
+}
+
+/**
+ *
+ * @param[in]      *bb_a             The first cr_input_data for comparison.
+ * @param[in]      *bb_b             The second cr_input_data for comparison.
+ * @param[out]     *stream           FILE stream to which compariosn is printed.
+ *
+ * @return \c void
+ */
+void compare_cr_input_data(const cr_input_data *bb_a, const cr_input_data *bb_b, FILE *stream){
+    for(int i=0; i<7; i++){
+        fprintf(stream, "dihed_angles[%i] = %g | %g\n", i, gsl_vector_get(bb_a->dihed_angles, i), gsl_vector_get(bb_b->dihed_angles, i));
+    }
+    for(int i=0; i<7; i++){
+        fprintf(stream, "bend_angles[%i] = %g | %g\n", i, gsl_vector_get(bb_a->bend_angles, i), gsl_vector_get(bb_b->bend_angles, i));
+    }
+    for(int i=0; i<7; i++){
+        fprintf(stream, "r[%i] = %g | %g\n", i, gsl_vector_get(bb_a->r, i), gsl_vector_get(bb_b->r, i));
+    }
+    for(int i=0; i<7; i++){
+        fprintf(stream, "d[%i] = %g | %g\n", i, gsl_vector_get(bb_a->d, i), gsl_vector_get(bb_b->d, i));
+    }
+}
+
+/**
+ *
+ * @param[in]      *bb_a             The first cr_input_data for comparison.
+ * @param[in]      *bb_b             The second cr_input_data for comparison.
+ *
+ * @return \c void
+ */
+int compare_bend_angles(const cr_input_data *bb_a, const cr_input_data *bb_b){
+    // return 0 if same otherwise 1
+    for(int i=0; i<7; i++){
+        if (gsl_vector_get(bb_a->bend_angles, i) != gsl_vector_get(bb_b->bend_angles, i)){
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void T7 (gsl_vector *T,const struct cr_input_data bb)
 {
     int i;

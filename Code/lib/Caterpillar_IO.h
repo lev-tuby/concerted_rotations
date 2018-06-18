@@ -7,6 +7,8 @@
  * @note Most of functions are there for compatibility reasons.
  *
  * @todo what about having one function that save/read configuration to/from PDB and only macros representing format are used ... would hide internal layer
+ * @todo Would be nice to have return codes from all functions and normalize functions ...
+ * @todo There is some redundancy between functions (for example CATIO_pdb2cat and CATIO_pdb2cat_keep_CB)
  */
 
 #include <stdio.h>
@@ -38,14 +40,14 @@ void CATIO_cat2pdb 			( char *filename, char *writemode, char *remark, cat_prot 
  * @note Does not insert hydrogens, does not rescale, does not compute dihedrals
  * @todo ... change usage of N_prot ... is not usd in function at all.
  */
-void CATIO_pdb2cat  	( cat_prot **prot, int *N_prot, int N_atom_types, char ATnames[N_atom_types][5], char Loc_keep, char *filename);
+int CATIO_pdb2cat  	( cat_prot **prot, int *N_prot, int N_atom_types, char ATnames[N_atom_types][5], char Loc_keep, char *filename);
 
 /**
  * @brief Function read PDB file and save it to internal Caterpillar model (keep CB atoms positions)
  *
  * @todo ... change usage of N_prot ... is not usd in function at all.
  */
-void CATIO_pdb2cat_keep_CB  		( cat_prot **prot, int *N_prot, char *filename);
+int CATIO_pdb2cat_keep_CB  		( cat_prot **prot, int *N_prot, char *filename);
 
 /**
  * @brief Function take internal reresentation of Caterpillar backbone and save it in binary format of PDB file

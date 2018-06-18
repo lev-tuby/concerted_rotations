@@ -6,8 +6,14 @@
  * @todo Remove deprecated functions and decide which functions will stay or which functions will split etc.
  */
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <gsl/gsl_matrix.h>
 
+#define MAX_BOND_LENGHT_DEVIATION 10e-9
+#define MAX_BOND_ANGLE_DEVIATION 10e-9
+#define MAX_BOND_DIHEDRAL_DEVIATION 10e-9
 
 /** @brief alphabet Size (number of "amino-acid" types in the interaction matrix)*/
 #define CAT_S 21
@@ -171,6 +177,12 @@ cat_prot * CAT_prot_alloc (size_t n_res, size_t n_atom_per_res);
 void CAT_prot_free (cat_prot * pr);
 
 /**
+ * @brief Move whole peptide along vector
+ */
+void CAT_move(cat_prot *p, const double *vec);
+
+
+/**
  * @brief Prints atom coordinates on stdout
  */
 void CAT_print(cat_prot *protein);
@@ -238,14 +250,25 @@ double compute_psi(cat_prot *p,int c);
  */
 void compute_dihedrals(cat_prot *p);
 
-/**
- * @brief Calculates the torsion angle between four successive atoms on a backbone
- *
- */
-double calc_dihedralf_angle(double *atom_1, double *atom_2, double *atom_3, double *atom_4);
 
 /**
  * @brief Builds a caterpillar peptide in a local DH base.
  */
 void build_peptide ( gsl_matrix *pep);
+
+/**
+ * @brief Function check bond lengths in protein
+ */
+int print_bond_errors           (FILE *stream, const cat_prot *p, char *path, int line);
+
+/**
+ * @brief Function check bond angles in protein
+ */
+int print_joint_angles_errors   (FILE *stream, const cat_prot *p, char *path, int line);
+
+/**
+ * @brief Function check peptide dihedral angle omega in protein
+ */
+int print_omega_errors          (FILE *stream, const cat_prot *p, char *path, int line);
+
 #endif //__CATERPILLAR__

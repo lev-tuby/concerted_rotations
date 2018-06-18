@@ -13,6 +13,7 @@
 #include "./my_geom.h"
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_sf.h>
 #include "./quaternions.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -153,7 +154,46 @@ void CAT_prot_free ( cat_prot * p)
 }
 
 /**
- * 
+ *
+ * @param[in,out]  *protein        Protein that is translated
+ * @param[in]      *vec            3D translation vector
+ *
+ * @return \c void
+ */
+void CAT_move(cat_prot *p, const double *vec){
+    for(int i=0; i<p->n_res;i++)
+    {
+        p->N[i][0]+=vec[0];
+        p->N[i][1]+=vec[1];
+        p->N[i][2]+=vec[2];
+
+        p->CA[i][0]+=vec[0];
+        p->CA[i][1]+=vec[1];
+        p->CA[i][2]+=vec[2];
+
+        p->C[i][0]+=vec[0];
+        p->C[i][1]+=vec[1];
+        p->C[i][2]+=vec[2];
+
+        p->O[i][0]+=vec[0];
+        p->O[i][1]+=vec[1];
+        p->O[i][2]+=vec[2];
+
+        p->H[i][0]+=vec[0];
+        p->H[i][1]+=vec[1];
+        p->H[i][2]+=vec[2];
+
+        if(p->n_atom_per_res == 6)
+        {
+            p->CB[i][0]+=vec[0];
+            p->CB[i][1]+=vec[1];
+            p->CB[i][2]+=vec[2];
+        }
+    }
+}
+
+/**
+ *
  * @param[in]      *protein        Protein whose configuration is printed
  *
  * @return \c void
@@ -162,7 +202,7 @@ void CAT_print(cat_prot *protein)
 {
     for(int i=0; i<protein->n_res;i++)
     {
-        printf("Resi: %i\n", i);
+        printf("Resi: %i | psi: %g phi: %g\n", i, protein->psi[i], protein->phi[i]);
         printf("N:  %g %g %g\n", protein->N[i][0], protein->N[i][1], protein->N[i][2]);
         printf("CA: %g %g %g\n", protein->CA[i][0], protein->CA[i][1], protein->CA[i][2]);
         printf("C:  %g %g %g\n", protein->C[i][0], protein->C[i][1], protein->C[i][2]);
@@ -188,14 +228,12 @@ void CAT_print(cat_prot *protein)
  */
 cat_prot * CAT_build_from_dihed ( int n_res, size_t n_atom_per_res, double *orig, double *dihed, char *seq)
 {
-	int i,j;
 	cat_prot *p = CAT_prot_alloc( n_res, n_atom_per_res );
-	CAT_set_residues_fasta  (p,n_res, seq);
 	CAT_set_prot_linear(p,orig,0.0);
-	double angle_NCaC;
-	for(i=0;i<n_res;i++)
+	CAT_set_residues_fasta(p,n_res, seq);
+	for(int i = 0; i < n_res; i++)
 	{
-		CAT_add_peptide(p,i,dihed[2*i],dihed[2*i+1],CAT_angle_NCaC);
+		CAT_add_peptide(p,i,dihed[2*i],M_PI-CAT_angle_NCaC,dihed[2*i+1]);
 	}
 	return p;
 }
@@ -496,14 +534,14 @@ void CAT_rescale( cat_prot *p)
 	p->H[0][2]=p->N[0][2] + CAT_Rbond_NH/r*(p->H[0][2]-p->N[0][2]);
 
 	//MAH
-	p->phi[0]=calc_dihedralf_angle(p->H[0],p->N[0],p->CA[0],p->C[0])-M_PI;
-	p->psi[0]=calc_dihedralf_angle(p->N[0],p->CA[0],p->C[0],p->N[1]);
+	p->phi[0]=dihedralangle_ABCD(p->H[0],p->N[0],p->CA[0],p->C[0])-M_PI;
+	p->psi[0]=dihedralangle_ABCD(p->N[0],p->CA[0],p->C[0],p->N[1]);
 	for(i=1;i<p->n_res-1;i++)
 	{
-		p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
-		p->psi[i]=calc_dihedralf_angle(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
+		p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+		p->psi[i]=dihedralangle_ABCD(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
 	}
-	p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+	p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
 	//FINE AGGIORNAMENTO DIEDRI
 	double angle_NCaC[p->n_res];
 	for(i=0;i<p->n_res-1;i++){
@@ -516,13 +554,13 @@ void CAT_rescale( cat_prot *p)
 	for(i=1;i<p->n_res;i++){
 		CAT_add_peptide(p,i,p->phi[i],p->psi[i],angle_NCaC[i]);
 	}
-	p->psi[0]=calc_dihedralf_angle(p->N[0],p->CA[0],p->C[0],p->N[1]);
+	p->psi[0]=dihedralangle_ABCD(p->N[0],p->CA[0],p->C[0],p->N[1]);
 	for(i=1;i<p->n_res-1;i++)
 	{
-		p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
-		p->psi[i]=calc_dihedralf_angle(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
+		p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+		p->psi[i]=dihedralangle_ABCD(p->N[i],p->CA[i],p->C[i],p->N[i+1]);
 	}
-	p->phi[i]=calc_dihedralf_angle(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
+	p->phi[i]=dihedralangle_ABCD(p->C[i-1],p->N[i],p->CA[i],p->C[i]);
 	for(i=0;i<p->n_res;i++)
 	{
 		fprintf(stderr,"%7.5f %7.5f\t",p->phi[i],p->psi[i]);
@@ -537,14 +575,10 @@ void CAT_rescale( cat_prot *p)
  */
 void CAT_rescale( cat_prot *protein)
 {
-	int i,j,k,l;
+	int i,j,k;
 	double bond[3];
 	double b;
-	double r_NH=CAT_Rbond_NH;
 	double r_CO=CAT_Rbond_CO;
-	double r_CN=CAT_Rbond_CN;
-	double r_CCa=CAT_Rbond_CCa;
-	double r_CaN=CAT_Rbond_CaN;
 
 	for(i=0;i<protein->n_res;i++)
 	{
@@ -1087,7 +1121,6 @@ int CAT_add_peptide ( cat_prot *p, int I, double phi, double alpha, double psi )
 
 /**
  *
- * 
  * @param[in,out]   *p        Protein whose dihedrals are recalculated
  *
  * @return \c void
@@ -1099,11 +1132,11 @@ void CAT_prot_dihedrals (cat_prot *protein)
 	{
 		if(i>0)
 		{
-			protein->phi[i]=calc_dihedralf_angle(protein->C[i-1],protein->N[i],protein->CA[i],protein->C[i]);
+			protein->phi[i]=dihedralangle_ABCD(protein->C[i-1],protein->N[i],protein->CA[i],protein->C[i]);
 		}
 		if(i<protein->n_res-1)
 		{
-			protein->psi[i]=calc_dihedralf_angle(protein->N[i],protein->CA[i],protein->C[i],protein->N[i+1]);
+			protein->psi[i]=dihedralangle_ABCD(protein->N[i],protein->CA[i],protein->C[i],protein->N[i+1]);
 		}
 	}
 }
@@ -1236,73 +1269,7 @@ void compute_dihedrals(cat_prot *p)
 	}
 }
 
-/**
- * This function was taken from LAMMPS.
- *
- * @param[in]      *atom_1        Coordinates of atom1 in 3D
- * @param[in]      *atom_2        Coordinates of atom2 in 3D
- * @param[in]      *atom_3        Coordinates of atom3 in 3D
- * @param[in]      *atom_4        Coordinates of atom4 in 3D
- *
- * @return dihedral angle between atoms
- */
-double calc_dihedralf_angle(double *atom_1, double *atom_2, double *atom_3, double *atom_4)
-{
-	double vb1x=0,vb1y=0,vb1z=0,vb2xm=0,vb2ym=0,vb2zm=0,vb3x=0,vb3y=0,vb3z=0;
-	double ax=0,ay=0,az=0,bx=0,by=0,bz=0,rasq=0,rbsq=0,rab;
-	double c=0,s=0;
-	double rgsq,rg;
-	double dihedral=0;
-	char err_msg[1024];
-	//double sinphi=0,rgsq=0;
-	// 1st bond
-	vb1x=atom_1[0]-atom_2[0];
-	vb1y=atom_1[1]-atom_2[1];
-	vb1z=atom_1[2]-atom_2[2];
-	// 2nd bond (opposite direction -- axis)
-	vb2xm=atom_2[0]-atom_3[0];
-	vb2ym=atom_2[1]-atom_3[1];
-	vb2zm=atom_2[2]-atom_3[2];
-	// 3rd bond
-	vb3x=atom_4[0]-atom_3[0];
-	vb3y=atom_4[1]-atom_3[1];
-	vb3z=atom_4[2]-atom_3[2];
-	// c,s calculation
-	ax = vb1y*vb2zm - vb1z*vb2ym;
-	ay = vb1z*vb2xm - vb1x*vb2zm;
-	az = vb1x*vb2ym - vb1y*vb2xm;
 
-	bx = vb3y*vb2zm - vb3z*vb2ym;
-	by = vb3z*vb2xm - vb3x*vb2zm;
-	bz = vb3x*vb2ym - vb3y*vb2xm;
-
-	rasq = ax*ax + ay*ay + az*az;
-	rbsq = bx*bx + by*by + bz*bz;
-	rgsq = vb2xm*vb2xm + vb2ym*vb2ym + vb2zm*vb2zm;
-	rg = sqrt(rgsq);
-
-	//ra2inv = 1.0/rasq;
-	//rb2inv = 1.0/rbsq;
-	//rabinv = sqrt(ra2inv*rb2inv);
-	rab=sqrt(rasq*rbsq);
-
-	c= (ax*bx + ay*by + az*bz)/rab;
-	s= rg*(ax*vb3x + ay*vb3y + az*vb3z)/rab;
-
-
-	//if(c < -1) c=-0.999999999999;
-	//if(c > 1) c=0.9999999999999; // The DBL_EPSILON is there to make sure that the cosphi is always a bit smaller than one otherwise acos returns a NaN
-	dihedral=atan2(s,c);
-	if(isnan(dihedral))
-	{
-		sprintf(err_msg,"%s:%d  cosphi=%g sinphi=%g\n",__FILE__,__LINE__,c,s);
-        printf("DEBUG: d0 %g %g %g | %g %g %g | %g %g %g | %g %g %g\n", atom_1[0], atom_1[1], atom_1[2], atom_2[0], atom_2[1], atom_2[2], atom_3[0], atom_3[1], atom_3[2],atom_4[0], atom_4[1], atom_4[2]);
-		failed(err_msg);
-	}
-	// Calculate dihedral angle
-	//if( scalar(aXb, c) < 0.0 ) *phi = (2.0*M_PI) - *phi;
-	return (dihedral);
-}
 
 /**
  * @param[in,out]   *pep            coordinates of the atoms in the peptide
@@ -1369,3 +1336,168 @@ void build_peptide ( gsl_matrix *pep)
 	gsl_matrix_set(pep,2,5,c*sin(theta));
 }
 
+/**
+ *
+ * Function iterate through whole protein and cheack each backbone bond length.
+ * If some bond lengths happend to be different from reference functio print
+ * in FILE stream magnitude of errors and index of residue where that error occuered.
+ * If all bond lengths are within MAX_BOND_LENGTH_DEVIATION from equlibrium value
+ * return 0 otherwise 1;
+ * 
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_bond_errors(FILE *stream, const cat_prot *p, char *path, int line)
+{
+    int
+        out=0;
+
+    double
+        norm_NCa,
+        norm_CaC,
+        norm_CN,
+        NCa_bond[3],
+        CaC_bond[3],
+        CN_bond[3];
+
+    fprintf(stream,"bonds:\n");
+
+    for(int i = 0; i < p->n_res; i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            NCa_bond[j] = p->CA[i][j] - p->N [i][j];
+            CaC_bond[j] = p->C [i][j] - p->CA[i][j];
+            if(i < p->n_res-1)
+            {
+                CN_bond[j] = p->N [i+1][j] - p->C [i][j];
+            }
+        }
+
+        norm_NCa = norm_d(NCa_bond, 3);
+        norm_CaC = norm_d(CaC_bond, 3);
+        norm_CN  = norm_d(CN_bond,  3);
+
+        if (
+            fabs(norm_NCa-CAT_Rbond_CaN) > MAX_BOND_LENGHT_DEVIATION ||
+            fabs(norm_CaC-CAT_Rbond_CCa) > MAX_BOND_LENGHT_DEVIATION ||
+            fabs(norm_CN-CAT_Rbond_CN  ) > MAX_BOND_LENGHT_DEVIATION
+            )
+            {
+                fprintf(stream,
+                        "%d Nca: %g CaC: %g CN: %g\t",
+                        i,
+                        fabs(norm_NCa-CAT_Rbond_CaN),
+                        fabs(norm_CaC-CAT_Rbond_CCa),
+                        fabs(norm_CN-CAT_Rbond_CN)
+                        );
+                out=1;
+            }
+    }
+
+    fprintf(stream,"\n");
+    fflush(stream);
+    return out;
+}
+
+/**
+ *
+ * Function iterate through whole protein and cheack each backbone bond angle.
+ * If some bond angles happend to be different from reference functio print
+ * in FILE stream magnitude of errors and index of residue where that error occuered.
+ * If all bond angles are within MAX_BOND_ANGLE_DEVIATION from equlibrium value
+ * return 0 otherwise 1;
+ * 
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_joint_angles_errors(FILE *stream, const cat_prot *p, char *path, int line)
+{
+    int
+        out=0;
+
+    double
+        angle_CaCN,
+        angle_CNCa,
+        angle_NCaC;
+
+    fprintf(stream,"joint angles:\n");
+
+    for(int i = 1; i < p->n_res; i++)
+    {
+        angle_CNCa = angle_ABC(p->C [i-1], p->N [i]  , p->CA[i]);
+        angle_CaCN = angle_ABC(p->CA[i-1], p->C [i-1], p->N [i]);
+        angle_NCaC = angle_ABC(p->N [i]  , p->CA[i]  , p->C [i]);
+
+        if (
+            fabs(angle_CNCa-CAT_angle_CNCa) > MAX_BOND_ANGLE_DEVIATION ||
+            fabs(angle_CaCN-CAT_angle_CaCN) > MAX_BOND_ANGLE_DEVIATION ||
+            fabs(angle_NCaC-CAT_angle_NCaC) > MAX_BOND_ANGLE_DEVIATION
+            )
+        {
+            fprintf(stream,
+                    "%d CNCa: %g CaCN: %g NCaC: %g\t",
+                    i,
+                    fabs(angle_CNCa-CAT_angle_CNCa),
+                    fabs(angle_CaCN-CAT_angle_CaCN),
+                    fabs(angle_NCaC-CAT_angle_NCaC)
+                    );
+            out=1;
+        }
+    }
+
+    fprintf(stream,"\n");
+    fflush(stream);
+    return out;
+}
+
+/**
+ *
+ * Function iterate through whole protein and cheack each peptide dihedral.
+ * If omega deviates from planar aligment by more then MAX_BOND_DIHEDRAL_DEVIATION,
+ * magnitude of the error is printed in FILE stream with index of first
+ * residue from residues participating in peptide bond.
+ * If any violation of peptide bond angle appears in protein function return 1
+ * otherwise 0;
+ * 
+ * @param[in,out]   *stream    FILE stream to whcich error statistics is printed
+ * @param[in]       *p         Tested protein.
+ * @param[in]       *path      Path to file in which error was rised.
+ * @param[in]       line       Line number at which error was rised.
+ *
+ * @return \c int
+ */
+int print_omega_errors(FILE *stream, const cat_prot *p, char *path, int line)
+{
+    int
+        out=0;
+
+    double
+        omega;
+
+    fprintf(stream,"omega:\n");
+
+    for(int i = 1; i < p->n_res; i++)
+    {
+        omega = dihedralangle_ABCD(p->CA[i-1], p->C[i-1], p->N[i], p->CA[i]);
+        omega = gsl_sf_angle_restrict_pos(omega);
+        if (
+            fabs(omega-M_PI) > MAX_BOND_DIHEDRAL_DEVIATION
+            )
+            {
+                fprintf(stream,"%d %g \n", i, fabs(omega-M_PI));
+                out=1;
+            }
+    }
+    fprintf(stream,"\n");
+    fflush(stream);
+    return out;
+}

@@ -8,6 +8,7 @@
 
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
+#include <math.h>
 
 /** @brief Return values of function that should return TRUE/FALSE.*/
 #ifndef TRUE
@@ -88,5 +89,9 @@ void rotate ( double **coord, int N, double center[3],double axis[3], double the
 gsl_matrix * gram_schmidt ( gsl_vector *v);
 
 
+/**
+ * @brief Function calculate dihedral from 4 atoms
+ */
+double dihedralangle_ABCD(const double *atom_1, const double *atom_2, const double *atom_3, const double *atom_4);
 
 #endif //__HDR_GEOM__
